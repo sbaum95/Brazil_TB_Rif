@@ -1,59 +1,35 @@
 # Author: Do Kyung Ryuk
 # Updated: 2023-06-28
-# Description: Merges health facility type to SINAN
+# Description: 
+# Adapts Do's original code to merge health facility type to SINAN 
 
-# library(foreign) # to read dbf file 
-# library(sf) # manipulate simple (spatial) features
-# library(spdep) # spatial statistics
-# library(dplyr) # data management
-# library(ggplot2) # visualization and mapping
-# library(ggsn) # separate package for ggplot() north symbol & scale bar
-# library(viridis) # color palette
-# library(egg) # for plotting multiple ggplots together
-# library(rgeoda) # for bivariate moran's I and other functions
-# library(RColorBrewer)
-# library(sp)
-# library(ggsn)
-# library(grid)
-# library(geobr)
-# library(readr)
-# library(mlogit)
-# library(dfidx)
-# library(LaplacesDemon)
-# library(MASS)
-# library(effects)
-# library(ggeffects)
-# library(scales)
-# library(janitor)
-# library(haven)
-# #library(tidyverse)
 
 # opening the data 
 # data <- read.dbf("/Users/dokyungryuk/Documents/spring 2023/Brazil spring/data clean up/data_brazil.dbf", as.is = FALSE) # SINAN
 # health_unit <- read_dta("/Users/dokyungryuk/Documents/spring 2023/Brazil spring/level health service_Brazil (1).dta")
-health_unit_master <- read_dta("data/level health service_Brazil (1).dta")
+health_unit <- read_dta("data/level health service_Brazil (1).dta")
 
 colnames(sinan_xpert) <- toupper(colnames(sinan_xpert))
 
 #filtering the years of your interest 
-data <- filter(sinan_xpert, NU_ANO %in%  c("2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014")) 
-health_unit <- filter(health_unit_master, year %in%  c("2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014")) 
+# data <- filter(sinan_xpert, NU_ANO %in%  c("2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014")) 
+# health_unit <- filter(health_unit_master, year %in%  c("2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014")) 
 
 #reclassification
-data$ID_UNID_AT1 <- as.numeric(as.character(data$ID_UNID_AT))
+sinan_xpert$ID_UNID_AT1 <- as.numeric(as.character(sinan_xpert$ID_UNID_AT)) 
 health_unit$cnes1 <- as.numeric(as.character(health_unit$cnes))
 
 
 ## Add years 
 my_list <- list()
 
-years <- c("2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014")
-
+# years <- c("2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014")
+years <- unique(sinan_xpert$NU_ANO) 
 
 for (i in years) {
   print(i)
   health_unit_in_year <- filter(health_unit, year == i) 
-  sinan_in_year <- filter(data, NU_ANO == i)
+  sinan_in_year <- filter(sinan_xpert, NU_ANO == i)
 
   merged <- merge(sinan_in_year, health_unit_in_year, by.x = "ID_UNID_AT1", by.y = "cnes1", all.x = T)
 
@@ -62,7 +38,7 @@ for (i in years) {
   my_list[[df_name]] <- merged
 } 
 
-data_new <- bind_rows(my_list)
+merged_health_unit <- bind_rows(my_list)
 
 
 # 
@@ -108,8 +84,8 @@ data_new <- bind_rows(my_list)
 # rm(data2018test_)
 
 #reclassified process needed for the new data
-data_new <- data_new %>% 
-  mutate(healthunit = case_when(
+merged_health_unit  <- merged_health_unit  %>% 
+  mutate(health_unit = case_when(
     first_level == 1  ~ "low complexity",
     second_level == 1 ~ "medium complexity",
     second_level_tb == 1 ~ "medium complexity",
@@ -120,6 +96,7 @@ data_new <- data_new %>%
     second_level_tb == 1 & third_level_tb == 1 ~ "high complexity", 
     others == 1 ~ "other"))
 
-data_new$healthunit <- factor(data_new$healthunit, levels = c("low complexity", "medium complexity", "high complexity", "other"))
+merged_health_unit$health_unit <- factor(merged_health_unit$health_unit, levels = c("low complexity", "medium complexity", "high complexity", "other"))
 
-merged_health_unit <- data_new 
+
+rm(health_unit_in_year, sinan_in_year, merged, health_unit, my_list)
