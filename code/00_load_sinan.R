@@ -14,11 +14,11 @@ sinan_xpert <- read_dta("data/fim_abr_2023_no name.dta") %>%
               "situa_ence", "forma", "agravaids", "agravalcoo", "agravdiabe", "test_molec"), as.factor) %>% 
   mutate(diag_yrmo = floor_date(as_date(dt_diag), "month"), 
          diag_yr = floor_date(as_date(dt_diag), "year"),
+         diag_qrt = floor_date(as_date(dt_diag), "quarter"),
          init_yr = floor_date(as_date(dt_inic_tr), "year"),
          init_yrmo = floor_date(as_date(dt_inic_tr), "month"),
-         close_yrmo = floor_date(as_date(dt_encerra), "month")) 
-# %>% filter(diag_yr >= "2014-01-01")
-
+         close_yrmo = floor_date(as_date(dt_encerra), "month")) %>% 
+  filter(diag_yr >= "2014-01-01" & diag_yr < "2022-01-01")
 
 
 
@@ -86,7 +86,19 @@ sinan_xpert <- merged_health_unit %>% select(!c("state", "municip_cod", "cnes", 
 colnames(sinan_xpert) <- tolower(colnames(sinan_xpert))
 
 
+
+# add xpert access data
+source(here::here("code/00_add_xpert_install_dates.R"))
+
+
+sinan_xpert <- sinan_xpert %>% 
+  left_join(start_imp_yr, by = "id_municip") %>% 
+  mutate(access_xpert = if_else(is.na(start_imp_yr), 0, 
+                                if_else(diag_yrmo >= start_imp_yr, 1, 0)))
+  
+
+
 # write file --------------------------------------------------------------
 save(sinan_xpert, file = "data/sinan_xpert.Rdata")
 
-rm(population, state_name, merged_health_unit)
+rm(population, state_name, merged_health_unit, start_imp_yr)
