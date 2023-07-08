@@ -13,26 +13,21 @@ load("data/sinan_xpert.Rdata")
 ## Questions ##:
 # - Do facilities that don't have access to Xpert put "Not Performed" vs. NA
 
+sinan_xpert$tb_hist <- if_else(sinan_xpert$tratamento %in% c("2", "3"), 1, 
+                               if_else(sinan_xpert$tratamento %in% c("1"), 0, 
+                                       if_else(sinan_xpert$tratamento %in% c("5"), 2, 
+                                               if_else(sinan_xpert$tratamento %in% c("6"), 3, NA))))
+
+sinan_xpert$hiv_status <- if_else(sinan_xpert$agravaids == 1, 1, # 1 - HIV positive
+                                  if_else(sinan_xpert$agravaids == 2, 0, NA)) # 0 - HIV negative
 
 
-# Implementation ----------------------------------------------------------
-# add in Xpert implementation data
-xpert <- read_excel("data/Equipamentos_RTR-TB_maio_2023.xlsx", sheet = "Equip por Estado", 
-                    col_types = c("text", 
-                                  "numeric", "text", "text", "text", 
-                                  "text", "numeric", "numeric", "date", 
-                                  "text", "text", "text", "text", "text")) %>% 
-  rename(id_municip = "Cód. Município", 
-         dt_install = "Data da instalação", 
-         id_unidade = "CNES") 
+sinan_xpert$sex <- if_else(sinan_xpert$cs_sexo == "M", 1, 
+                           if_else(sinan_xpert$cs_sexo == "F", 0, NA))
 
-
-
-# pull out municipalities implementing Xpert
-muni_with_xpert <- xpert %>% pull(id_municip) %>% unique()
 
 # Xpert coverage by year of implementation --------------------------------
-start_imp_yr <- xpert %>% 
+start_imp_yr <- xpert_access %>% 
   mutate(implementation_yr = floor_date(as_date(dt_install), "year")) %>% 
   group_by(id_municip) %>% 
   summarize(start_imp_yr = min(implementation_yr))
