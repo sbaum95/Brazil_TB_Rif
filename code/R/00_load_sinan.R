@@ -26,8 +26,9 @@ sinan_xpert <- read_dta("data/fim_abr_2023_no name.dta") %>%
          ) %>% 
   rename("id_municip_not" = "id_municip", 
          "id_municip" = "id_mn_resi") %>% 
-  filter(diag_yr >= "2012-01-01" & diag_yr < "2022-01-01")
+  filter(diag_yr >= "2014-01-01" & diag_yr < "2020-01-01")
 
+sinan_xpert$diag_yr <- as.numeric(year(sinan_xpert$diag_yr)) # so it filters
 
 
 # create age cat 
@@ -61,6 +62,8 @@ sinan_xpert$situa_ence <- factor(sinan_xpert$situa_ence)
 
 
 
+
+
 # municipality/micro-region characteristics -------------------------------
 
 # add state name
@@ -73,7 +76,6 @@ sinan_xpert <- left_join(sinan_xpert, state_name %>% select(sg_uf, NAME_1, NAME_
 mun_micro <- read.csv("data/micro_region/mun_micro_macro_2019.csv")
 sinan_xpert <- left_join(sinan_xpert, mun_micro %>% select(codufmun, uf, cod_micro), by = c("id_municip" = "codufmun"))  %>% 
   rename(id_micro = cod_micro)
-
 
 
 
@@ -96,6 +98,8 @@ sinan_xpert <- left_join(sinan_xpert, mun_population %>% select(id_municip, mun_
 
 # clean municip name
 sinan_xpert$municip_name <- tolower(sinan_xpert$municip_name)
+
+
 
 
 
@@ -123,6 +127,8 @@ sinan_xpert <- left_join(sinan_xpert, micro_population %>% select(cod_micro, mic
 
 
 
+
+
 # add health unit type data 
 source(here::here("code/R/00_add_health_unit_type.R"))
 
@@ -132,33 +138,52 @@ colnames(sinan_xpert) <- tolower(colnames(sinan_xpert))
 
 
 
-# add xpert access data
-# source(here::here("code/R/00_add_xpert_install_dates.R"))
-# 
-# 
-# sinan_xpert <- sinan_xpert %>% 
-#   left_join(start_imp_yr, by = "id_municip") %>% 
-#   mutate(access_xpert = if_else(is.na(start_imp_yr), 0, 
-#                                 if_else(diag_yrmo >= start_imp_yr, 1, 0)))
-#   
+
+
+
+
 
 # add FHS coverage (municipality and micro-region)
 source(here::here("code/R/00_load_fhs_coverage.R"))
 
-sinan_xpert <- left_join(sinan_xpert, fhs %>% select(id_municip, year, mun_fhs_num_teams), by = c("id_municip", "diag_yr" = "year")) %>% 
-  mutate(mun_fhs_per_cap = (mun_fhs_num_teams/mun_pop_2010)*4000)
+## add in data by municipality
+sinan_xpert <- left_join(sinan_xpert, fhs %>% select(id_municip, year, mun_fhs_num_teams), by = c("id_municip", "diag_yr" = "year"))
+  
+sinan_xpert <- sinan_xpert %>% mutate(mun_fhs_per_cap = (mun_fhs_num_teams/mun_pop_2010)*4000)
 
-## calculate num FHS teams per micro-region per year
+sinan_xpert$mun_fhs_cat <- cut(sinan_xpert$mun_fhs_per_cap,
+                               breaks = quantile(sinan_xpert$mun_fhs_per_cap, probs = 0:5/5, na.rm = TRUE), 
+                               labels = FALSE, 
+                               include.lowest = TRUE)
+
+
+## calculate and add for micro-region
 mic_fhs_cov <- sinan_xpert %>% 
-  select(id_micro, id_municip, diag_yr, mun_fhs_num_teams) %>% 
+  select(id_micro, id_municip, mun_fhs_num_teams, mic_pop_2010) %>% 
   unique() %>% 
-  group_by(id_micro, diag_yr) %>% 
-  mutate(mic_fhs_num_teams = sum(mun_fhs_num_teams, na.rm = TRUE)) %>% 
+  group_by(id_micro) %>% 
+  mutate(mic_fhs_num_teams = mean(mun_fhs_num_teams, na.rm = TRUE)) %>% 
   select(-c(id_municip, mun_fhs_num_teams)) %>% 
-  unique()
-
-sinan_xpert <- left_join(sinan_xpert, mic_fhs_cov, by = c("id_micro", "diag_yr")) %>% 
+  unique() %>% 
   mutate(mic_fhs_per_cap = (mic_fhs_num_teams/mic_pop_2010)*4000)
+
+
+mic_fhs_cov$mic_fhs_cat <- cut(mic_fhs_cov$mic_fhs_per_cap,
+                               breaks = quantile(mic_fhs_cov$mic_fhs_per_cap, probs = 0:5/5, na.rm = TRUE), 
+                               labels = FALSE, 
+                               include.lowest = TRUE)
+
+
+sinan_xpert <- left_join(sinan_xpert, mic_fhs_cov %>% select(mic_fhs_per_cap, mic_fhs_cat), by = c("id_micro"))
+
+
+
+
+
+
+
+
+
 
 
 
@@ -218,22 +243,26 @@ mic_bf$mic_bf_cat <- cut(mic_bf$mic_pct_bf,
                       include.lowest = TRUE)
 
 
-sinan_xpert <- left_join(sinan_xpert, mic_bf %>% 
-                           select(id_micro, mic_bf_cat), 
-                         by = c("id_micro"))
+sinan_xpert <- left_join(sinan_xpert, mic_bf %>% select(id_micro, mic_bf_cat),  by = c("id_micro"))
 
 
 
 
 # select vars of interest
-sinan_xpert <- sinan_xpert %>% select(c("id_unidade", "nu_notific", "dt_notific", "nu_ano", "sg_uf", "sg_uf_not", "state_nm", "id_micro", "id_municip_not", "id_municip", "municip_name", "mic_pop_2010", 
-                                        "mun_pop_2010", "dt_diag", "dt_nasc", "cs_sexo", "tratamento", "agravaids", "hiv" , "dt_inic_tr", "id_unid_at", "situa_ence", "test_molec", "test_sensi", "diag_yr", 
-                          "diag_qrt", "age","age_cat","health_unit", 
-                          # "access_xpert", 
-                          
-                          # "people_with_fhs_2015", 
-                          # "pct_fhs_cov",
-                          "mun_pct_urban", "mic_pct_urban", "mun_urban_cat", "mic_urban_cat", "mun_fhs_num_teams", "mic_fhs_num_teams", "mun_fhs_per_cap", "mic_fhs_per_cap","mun_bf_cat", "mic_bf_cat", "mun_has_prison", "mic_has_prison"))
+sinan_xpert <- sinan_xpert %>% select(c(
+  # Patient location identifiers
+  "id_unidade", "nu_notific", "dt_notific", "nu_ano", "sg_uf", "sg_uf_not", "state_nm", "id_micro", "id_municip_not", "id_municip", "municip_name", 
+  # Patient characteristics 
+  "dt_diag", "diag_yr", "diag_qrt", "dt_inic_tr", "id_unid_at", "dt_nasc", "age","age_cat","health_unit", "cs_sexo", "tratamento", "agravaids", "hiv", "situa_ence", "test_molec",  
+  # Municipality/Micro characteristics - Urbanicity
+  "mun_pop_2010", "mic_pop_2010", "mun_pct_urban", "mic_pct_urban", "mun_urban_cat", "mic_urban_cat", 
+  # Municipality/Micro characteristics - Primary health care coverage 
+  "mun_fhs_num_teams", "mic_fhs_num_teams", "mun_fhs_per_cap", "mic_fhs_per_cap", "mic_fhs_cat", "mic_fhs_cat", 
+  # Municipality/Micro characteristics - Poverty proxy
+  "mun_pct_bf", "mic_pct_bf", "mun_bf_cat", "mic_bf_cat", 
+  # Municipality/Micro characteristics - Prison 
+  "mun_has_prison", "mic_has_prison"
+  ))
                           
 # write file --------------------------------------------------------------
 save(sinan_xpert, file = "data/sinan_xpert.Rdata")
