@@ -39,7 +39,7 @@ health_unit$cnes <- as.numeric(as.character(health_unit$cnes))
 my_list <- list()
 
 years <- c("2019", "2018", "2017", "2016", "2015", "2014")
-sinan_xpert$DIAG_YR <- as.numeric(year(sinan_xpert$DIAG_YR)) # so it filters
+# sinan_xpert$DIAG_YR <- as.numeric(year(sinan_xpert$DIAG_YR)) # so it filters
 
 for (i in years) {
   print(i)
