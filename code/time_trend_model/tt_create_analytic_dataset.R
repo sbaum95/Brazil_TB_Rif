@@ -1,9 +1,12 @@
 # Author: Sarah Baum
 # Created: 2023-08-21
-# Updated: 
+# Updated: 2023-11-13
 # Description/Decisions: 
 # -- Combined learn_GAM.R and draft_stan.R scripts to create clear analytic 
 #    datasets for models
+# -- Merged re-entry and relapsed datasets into "previous"
+# -- Added in FHS cat
+
 
 
 source(here::here("code/dependencies.R"))
@@ -14,7 +17,8 @@ load("data/sinan_xpert.Rdata")
 ## -- Ages - Remove (age >=0 & age <=100)
 
 
-# individual-level observations -------------------------------------------
+
+# load and clean individual-level observations -------------------------------------------
 df <- sinan_xpert %>% 
   mutate(
     state = as.factor(sg_uf), 
@@ -24,16 +28,12 @@ df <- sinan_xpert %>%
                   if_else(cs_sexo == "F", 0, NA)) %>% as.factor(), 
     
     # define HIV status 
-    # First, defined by HIV test result; If NA, in progress or not performed, 
+    # Defined by HIV test result; If NA, in progress or not performed, 
     # then by self-report AGRAVAIDS
     hiv_status = if_else(hiv == "1", 1,
                          if_else(hiv == "2", 0, 
                                  if_else(agravaids == "1", 1, 
                                          if_else(agravaids == "2", 0, NA)))) %>% as.factor(),
-    
-    # Old definition
-    # hiv = if_else(agravaids == 1, 1, 
-    #               if_else(agravaids == 2, 0, NA)) %>% as.factor(),
     
     # define Xpert test status
     tested = if_else(test_molec %in% c("1", "2", "3", "4"), 1, 0),
@@ -44,24 +44,24 @@ df <- sinan_xpert %>%
   ) %>% 
   filter(diag_qrt < "2020-01-01") %>% 
   select(state, state_nm, id_municip, diag_qrt, age, age_cat, sex, tratamento, hiv_status, result, health_unit, 
-         # pct_fhs_cov, 
-         urban_cat, has_prison, bf_cat) %>% 
+         mun_urban_cat, mun_has_prison, mun_bf_cat, mun_fhs_cat, 
+         mic_urban_cat, mic_has_prison, mic_bf_cat, mic_fhs_cat) %>% 
   filter(!is.na(state))
 
 
 
+## re-level categorical reference categories
+df$age_cat <- relevel(df$age_cat, ref = "25-34") # 25-34 (largest age cat)
+df$sex <- relevel(df$sex, ref = "0") # female
 
-## update reference category for age cat to be 25-34 (largest age cat)
-df$age_cat <- relevel(df$age_cat, ref = "25-34")
+df$mun_urban_cat <- relevel(as.factor(df$mun_urban_cat), ref = "1") # most rural 
+df$mun_bf_cat <- relevel(as.factor(df$mun_bf_cat), ref = "1") # lowest bf coverage
+df$mun_fhs_cat <- relevel(as.factor(df$mun_fhs_cat), ref = "1") # lowest fhs coverage
 
-## update reference category for sex cat to be female 
-df$sex <- relevel(df$sex, ref = "0")
+df$mic_urban_cat <- relevel(as.factor(df$mic_urban_cat), ref = "1") # most rural 
+df$mic_bf_cat <- relevel(as.factor(df$mic_bf_cat), ref = "1") # lowest bf coverage
+df$mic_fhs_cat <- relevel(as.factor(df$mic_fhs_cat), ref = "1") # lowest fhs coverage
 
-## update reference category for sex cat to be most rural
-df$urban_cat <- relevel(as.factor(df$urban_cat), ref = "1")
-
-## update reference category for sex cat to be lowest bf coverage
-df$bf_cat <- relevel(as.factor(df$bf_cat), ref = "1")
 
 
 
@@ -73,24 +73,21 @@ sorted_dates <- sort(unique(df$diag_qrt))
 time <- setNames(1:length(sorted_dates), format(sorted_dates, "%Y-%m-%d"))
 dates <- cbind(as.data.frame(sorted_dates), time)
 df <- left_join(df, dates, by = c("diag_qrt" = "sorted_dates"))
-df$time <- as.numeric(as.character(df$time)) # make is
+df$time <- as.numeric(as.character(df$time)) 
 
-## create individual-level datasets
+
+# create individual-level datasets
 mdf_new_ind <- df %>% filter(tratamento == "1")
-mdf_relapse_ind <- df %>% filter(tratamento == "2") 
-mdf_reentry_ind <- df %>% filter(tratamento == "3") 
+mdf_prev_ind <- df %>% filter(tratamento %in% c("2", "3")) 
 
 save(mdf_new_ind, file = "data/mdf_new_ind.Rdata")
-save(mdf_relapse_ind, file = "data/mdf_relapse_ind.Rdata")
-save(mdf_reentry_ind, file = "data/mdf_reentry_ind.Rdata")
+save(mdf_prev_ind, file = "data/mdf_prev_ind.Rdata")
 
 
 
 
 
-
-
-# create group-level dataset (hiv, sex, age_cat) ---------------------------------
+# create group-level datasets (hiv, sex, age_cat) ---------------------------------
 ## new cases 
 load("data/mdf_new_ind.Rdata")
 
@@ -114,39 +111,18 @@ mdf_new_grp <- mdf_new_ind %>%
          ) %>% 
   select(-c(miss, neg, pos))
 
+# cross-check number of cases 
+mdf_new_grp %>% ungroup() %>% summarize(sum(cases)) 
 
-# mdf_new_grp_covs <- mdf_new_ind %>% 
-#   # filter(!is.na(hiv_status) & !is.na(age) &  !is.na(sex) & !is.na(state) & !is.na(age_cat)) %>%
-#   select(-c(diag_qrt, age, tratamento)) %>% 
-#   group_by(state, state_nm, time, age_cat, sex, hiv_status, result, health_unit) %>% 
-#   count() %>% 
-#   pivot_wider(names_from = "result", values_from = "n") %>%
-#   rename(neg = "0",
-#          pos = "1",
-#          miss = `NA`) %>%
-#   mutate(Negative = if_else(is.na(neg), 0, neg),
-#          Positive = if_else(is.na(pos), 0, pos),
-#          Miss = if_else(is.na(miss), 0, miss)) %>% 
-#   mutate(cases = Negative + Positive + Miss, 
-#          pct_tested = (Negative + Positive)/(Negative + Positive + Miss), 
-#          obs_pct_positive = if_else(is.nan(Positive/(Negative + Positive)), 0, Positive/(Negative + Positive))
-#   ) %>% 
-#   select(-c(miss, neg, pos))
-
-
-
-
-
-mdf_new_grp %>% ungroup() %>% summarize(sum(cases)) # check number of cases 
-
+# save df 
 save(mdf_new_grp, file = "data/mdf_new_grp.Rdata")
 
 
 
 
 
-## relapse
-mdf_relapse_grp <- mdf_relapse_ind %>% 
+## previous 
+mdf_prev_grp <- mdf_prev_ind %>% 
   filter(!is.na(hiv_status) & !is.na(age) &  !is.na(sex) & !is.na(state) & !is.na(age_cat)) %>%
   select(-c(diag_qrt, age, tratamento)) %>% 
   group_by(state, time, age_cat, sex, hiv, result) %>% 
@@ -162,33 +138,12 @@ mdf_relapse_grp <- mdf_relapse_ind %>%
          pct_pos = if_else(is.nan(Positive/(Negative + Positive)), 0, Positive/(Negative + Positive)),
          cases = Negative + Positive + Miss)
 
-mdf_relapse_grp %>% ungroup() %>% summarize(sum(cases)) # check number of cases 
+# cross-check number of cases 
+mdf_prev_grp %>% ungroup() %>% summarize(sum(cases)) # check number of cases 
 
-save(mdf_relapse_grp, file = "data/mdf_relapse_grp.Rdata")
+# save df 
+save(mdf_prev_grp, file = "data/mdf_prev_grp.Rdata")
 
-
-
-
-## re-entry
-mdf_reentry_grp <- mdf_reentry_ind %>% 
-  filter(!is.na(hiv_status) & !is.na(age) &  !is.na(sex) & !is.na(state) & !is.na(age_cat)) %>%
-  select(-c(diag_qrt, age, tratamento)) %>% 
-  group_by(state, time, age_cat, sex, hiv, result) %>% 
-  count() %>% 
-  pivot_wider(names_from = "result", values_from = "n") %>%
-  rename(neg = "0",
-         pos = "1",
-         miss = `NA`) %>%
-  mutate(Negative = if_else(is.na(neg), 0, neg),
-         Positive = if_else(is.na(pos), 0, pos),
-         Miss = if_else(is.na(miss), 0, miss)) %>% 
-  mutate(pct_tested = (Negative + Positive)/(Negative + Positive + Miss), 
-         pct_pos = if_else(is.nan(Positive/(Negative + Positive)), 0, Positive/(Negative + Positive)),
-         cases = Negative + Positive + Miss)
-
-mdf_reentry_grp %>% ungroup() %>% summarize(sum(cases)) # check number of cases 
-
-save(mdf_reentry_grp, file = "data/mdf_reentry_grp.Rdata")
 
 
 
