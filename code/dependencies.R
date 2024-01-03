@@ -1,5 +1,6 @@
 library(tidyverse)
 library(here)
+library(bannerCommenter)
 
 library(readxl)
 library(haven)
@@ -13,3 +14,8 @@ library(spdep)
 library(tmap)
 
 library(janitor)
+
+library(mgcv)
+library(gratia)
+library(itsadug)
+library(tidygam)
