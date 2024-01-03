@@ -15,10 +15,44 @@ bf_cov <- read_excel(files)
 
 bf_merge <- bf_cov %>% 
   # make month a year 
-  mutate(year =  floor_date(as_date(month), "year")) %>% 
+  mutate(year =  floor_date(as_date(month), "year"), 
+         id_municip = as.factor(id_municip)) %>% 
   group_by(year, UF, id_municip) %>% 
   # avg number of families receiving BF per month by year
   summarize(mun_avg_persons_bf = mean(persons)) %>% 
   filter(year == "2018-01-01")
+
+
+
+# merge 
+sinan_tmp <- left_join(sinan_tmp, bf_merge %>% 
+                           ungroup() %>% 
+                           select(id_municip, mun_avg_persons_bf), 
+                         by = c("id_mn_resi" = "id_municip")) %>% 
+  mutate(mun_pct_bf = mun_avg_persons_bf/mun_pop_2010, 
+         mun_bf_cat = cut(mun_pct_bf,
+                          breaks = quantile(mun_pct_bf, probs = 0:5/5, na.rm = TRUE), 
+                          labels = FALSE, 
+                          include.lowest = TRUE))
+
+
+# ## by microregion 
+# mic_bf <- sinan_xpert %>% 
+#   select(id_micro, mun_avg_persons_bf, mic_pop_2010) %>% 
+#   unique() %>% 
+#   group_by(id_micro) %>% 
+#   mutate(mic_avg_person_bf = sum(mun_avg_persons_bf, na.rm = TRUE), 
+#          mic_pct_bf = mic_avg_person_bf/mic_pop_2010) %>% 
+#   select(-mun_avg_persons_bf) %>% 
+#   unique()
+# 
+# 
+# mic_bf$mic_bf_cat <- cut(mic_bf$mic_pct_bf,
+#                          breaks = quantile(mic_bf$mic_pct_bf, probs = 0:5/5, na.rm = TRUE), 
+#                          labels = FALSE, 
+#                          include.lowest = TRUE)
+
+
+# sinan_xpert <- left_join(sinan_xpert, mic_bf %>% select(id_micro, mic_pct_bf, mic_bf_cat),  by = c("id_micro"))
 
 
