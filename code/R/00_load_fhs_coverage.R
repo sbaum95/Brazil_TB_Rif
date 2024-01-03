@@ -13,9 +13,6 @@
 
 
 
-# Note: This only includes data for 3361 municipalities
-source(here::here("code/dependencies.R"))
-
 # old code 
 # load and clean .csv file for Dec 2015
 # fhs_cov <- read_delim("data/fhs_coverage/siab_cnv_SIABFBR22050998_216_48_63.csv", 
@@ -53,9 +50,9 @@ colnames(fhs_cov) <- tolower(colnames(fhs_cov))
 
 
 # filter to mid-year count (July) - Based on Andrade et al. (2018)
-fhs <- separate(fhs_cov, municip, into = c("id_municip", "municip_nm"), sep = "(?<=\\d)\\s") %>%
+fhs <- separate(fhs_cov, municip, into = c("id_municip", "name_mun"), sep = "(?<=\\d)\\s") %>%
   filter(
-    !is.na(municip_nm)
+    !is.na(name_mun)
     ) %>% 
   select(
     1:2, matches("jul")
@@ -70,11 +67,54 @@ fhs <- separate(fhs_cov, municip, into = c("id_municip", "municip_nm"), sep = "(
 
 
 # to make merging to sinan work
-fhs$id_municip <- as.numeric(fhs$id_municip)
+fhs$id_municip <- as.factor(fhs$id_municip)
 fhs$year <- as.numeric(fhs$year)
 fhs$mun_fhs_num_teams <- as.numeric(fhs$mun_fhs_num_teams)
 
 
 
 # save
-save(fhs, file = "data/fhs_coverage.Rdata")
+# save(fhs, file = "data/fhs_coverage.Rdata")
+
+
+
+## add in data by municipality
+sinan_tmp <- left_join(sinan_tmp, fhs %>% select(id_municip, year, mun_fhs_num_teams), by = c("id_mn_resi"= "id_municip", "diag_yr" = "year"))
+
+
+# calculate number of teams per 4000
+sinan_tmp %<>% mutate(mun_fhs_per_cap = (mun_fhs_num_teams/mun_pop_2010)*4000)
+
+
+# create categorical var 
+sinan_tmp$mun_fhs_cat <- cut(sinan_tmp$mun_fhs_per_cap,
+                               breaks = quantile(sinan_tmp$mun_fhs_per_cap, probs = 0:5/5, na.rm = TRUE), 
+                               labels = FALSE, 
+                               include.lowest = TRUE)
+
+
+
+
+## calculate and add for micro-region
+# mic_fhs_cov <- sinan_xpert %>% 
+#   select(id_micro, id_municip, mun_fhs_num_teams, mic_pop_2010) %>% 
+#   unique() %>% 
+#   group_by(id_micro) %>% 
+#   mutate(mic_fhs_num_teams = mean(mun_fhs_num_teams, na.rm = TRUE)) %>% 
+#   select(-c(id_municip, mun_fhs_num_teams)) %>% 
+#   unique() %>% 
+#   mutate(mic_fhs_per_cap = (mic_fhs_num_teams/mic_pop_2010)*4000)
+# 
+# 
+# mic_fhs_cov$mic_fhs_cat <- cut(mic_fhs_cov$mic_fhs_per_cap,
+#                                breaks = quantile(mic_fhs_cov$mic_fhs_per_cap, probs = 0:5/5, na.rm = TRUE), 
+#                                labels = FALSE, 
+#                                include.lowest = TRUE)
+# 
+# 
+# sinan_xpert <- left_join(sinan_xpert, mic_fhs_cov %>% select(mic_fhs_per_cap, mic_fhs_cat), by = c("id_micro"))
+# 
+
+
+# rm(fhs, fhs_cov)
+
