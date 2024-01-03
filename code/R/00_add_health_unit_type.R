@@ -19,7 +19,7 @@ health_unit <- read_dta("data/level health service_Brazil (1).dta")
 #   select(cnes, uni_tp) %>% 
 #   unique()
 
-colnames(sinan_xpert) <- toupper(colnames(sinan_xpert))
+# colnames(sinan_xpert) <- toupper(colnames(sinan_xpert))
 
 #filtering the years of your interest 
 # data <- filter(sinan_xpert, NU_ANO %in%  c("2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014")) 
@@ -30,10 +30,11 @@ colnames(sinan_xpert) <- toupper(colnames(sinan_xpert))
 # sinan_xpert$ID_UNID_AT <- as.numeric(as.character(sinan_xpert$ID_UNID_AT)) 
 
 # for notifying (that is ideally diagnosing health unit)
-sinan_xpert$ID_UNIDADE <- as.numeric(as.character(sinan_xpert$ID_UNIDADE)) 
+# sinan_xpert$ID_UNIDADE <- as.numeric(as.character(sinan_xpert$ID_UNIDADE)) 
+sinan_tmp$id_unidade %<>%  as.numeric(as.character()) 
 
-health_unit$cnes <- as.numeric(as.character(health_unit$cnes)) 
-
+# health_unit$cnes <- as.numeric(as.character(health_unit$cnes))
+health_unit$cnes %<>%  as.numeric(as.character()) 
 
 ## Add years 
 my_list <- list()
@@ -45,17 +46,17 @@ for (i in years) {
   print(i)
   health_unit_in_year <- filter(health_unit, year == i) 
   # sinan_in_year <- filter(sinan_xpert, NU_ANO == i)
-  sinan_in_year <- filter(sinan_xpert, DIAG_YR == i) # merge based on year of diag, rather than year of notif
+  sinan_in_year <- filter(sinan_tmp, diag_yr == i) # merge based on year of diag, rather than year of notif
   
-  merged <- merge(sinan_in_year, health_unit_in_year, by.x = "ID_UNIDADE", by.y = "cnes", all.x = T)
+  merged <- merge(sinan_in_year, health_unit_in_year, by.x = "id_unidade", by.y = "cnes", all.x = T)
   # merged <- merge(sinan_in_year, health_unit_in_year, by.x = "ID_UNID_AT1", by.y = "cnes1", all.x = T)
 
-  df_name <- paste0("dataset_", i)
+  df_name <- paste0("dataset.", i)
   
   my_list[[df_name]] <- merged
 } 
 
-merged_health_unit <- bind_rows(my_list)
+merge <- bind_rows(my_list)
 
 # check that it works! 
 # health_unit_in_year %>% 
@@ -110,7 +111,7 @@ merged_health_unit <- bind_rows(my_list)
 # rm(data2018test_)
 
 #reclassified process needed for the new data
-merged_health_unit  <- merged_health_unit  %>% 
+merged_health_unit <- merge  %>% 
   mutate(health_unit = case_when(
     first_level == 1  ~ "low complexity",
     second_level == 1 ~ "medium complexity",
@@ -125,7 +126,7 @@ merged_health_unit  <- merged_health_unit  %>%
 merged_health_unit$health_unit <- factor(merged_health_unit$health_unit, levels = c("low complexity", "medium complexity", "high complexity", "other"))
 
 
-rm(health_unit_in_year, sinan_in_year, merged, health_unit, my_list)
+rm(health_unit_in_year, sinan_in_year, merge, health_unit, my_list)
 
 
 
