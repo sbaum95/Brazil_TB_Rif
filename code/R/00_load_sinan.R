@@ -28,7 +28,12 @@ sinan_xpert <- read_dta("data/fim_abr_2023_no name.dta") %>%
          "id_municip" = "id_mn_resi") %>% 
   filter(diag_yr >= "2014-01-01" & diag_yr < "2020-01-01")
 
+
+
 sinan_xpert$diag_yr <- as.numeric(year(sinan_xpert$diag_yr)) # so it filters
+
+
+
 
 
 # create age cat 
@@ -125,6 +130,9 @@ micro_population$mic_urban_cat <- cut(micro_population$mic_pct_urban,
 
 sinan_xpert <- left_join(sinan_xpert, micro_population %>% select(cod_micro, mic_pop_2010, mic_pct_urban, mic_urban_cat), by = c("id_micro" = "cod_micro"))
 
+sinan_xpert$mun_urban_cat <- as.factor(sinan_xpert$mun_urban_cat)
+sinan_xpert$mic_urban_cat <- as.factor(sinan_xpert$mic_urban_cat)
+
 
 
 
@@ -177,6 +185,8 @@ mic_fhs_cov$mic_fhs_cat <- cut(mic_fhs_cov$mic_fhs_per_cap,
 sinan_xpert <- left_join(sinan_xpert, mic_fhs_cov %>% select(mic_fhs_per_cap, mic_fhs_cat), by = c("id_micro"))
 
 
+sinan_xpert$mun_fhs_cat <- as.factor(sinan_xpert$mun_fhs_cat)
+sinan_xpert$mic_fhs_cat  <- as.factor(sinan_xpert$mic_fhs_cat)
 
 
 
@@ -186,22 +196,16 @@ sinan_xpert <- left_join(sinan_xpert, mic_fhs_cov %>% select(mic_fhs_per_cap, mi
 
 
 
-
-# add prison (merge based on municip name)
+# add prison (merge based on municip name) - Need to go back and fix some duplicates
 source(here::here("code/R/00_add_prison.R"))
 
-sinan_xpert <- left_join(sinan_xpert, prison_merge, by = c("municip_name" = "municip_nm", "diag_yr" = "year")) %>% 
-  mutate(mun_has_prison = if_else(has_prison == 1, 1, 0)) %>% 
-  select(-has_prison)
+sinan_xpert <- left_join(sinan_xpert, prison_merge, by = c("municip_name" = "municip_nm"))
 
-
-# from prison merge - 1125 municipalities have prisons 
-# from sinan - 1114 municipalities in sinan are also among the list of municipalities from prison merge that have prisons
-# filter out municipalities with prison from sinan and see whether or not has prison = 1: All of them do not have prisons, despite merge working well 
+sinan_xpert<- sinan_xpert %>% mutate(mun_has_prison = if_else(is.na(mun_has_prison), 0, 1))
 
 mic_has_prison <- sinan_xpert %>% 
-  select(municip_name, id_micro, mun_has_prison) %>% 
-  unique() %>% 
+  select(municip_name, id_micro, mun_has_prison) %>%
+  unique() %>%
   group_by(id_micro) %>% 
   mutate(mic_has_prison = if_else(sum(mun_has_prison) > 0, 1, 0)) %>% 
   select(-c(municip_name, mun_has_prison)) %>% 
@@ -209,6 +213,8 @@ mic_has_prison <- sinan_xpert %>%
 
 sinan_xpert <- left_join(sinan_xpert, mic_has_prison , by = c("id_micro")) 
 
+sinan_xpert$mun_has_prison <- relevel(as.factor(sinan_xpert$mun_has_prison), ref = "1")
+sinan_xpert$mic_has_prison <- relevel(as.factor(sinan_xpert$mic_has_prison), ref = "1")
 
 
 # add BF coverage (avg per month in 2018)
@@ -243,7 +249,10 @@ mic_bf$mic_bf_cat <- cut(mic_bf$mic_pct_bf,
                       include.lowest = TRUE)
 
 
-sinan_xpert <- left_join(sinan_xpert, mic_bf %>% select(id_micro, mic_bf_cat),  by = c("id_micro"))
+sinan_xpert <- left_join(sinan_xpert, mic_bf %>% select(id_micro, mic_pct_bf, mic_bf_cat),  by = c("id_micro"))
+
+sinan_xpert$mun_bf_cat <- as.factor(sinan_xpert$mun_bf_cat)
+sinan_xpert$mic_bf_cat <- as.factor(sinan_xpert$mic_bf_cat)
 
 
 
@@ -263,6 +272,13 @@ sinan_xpert <- sinan_xpert %>% select(c(
   # Municipality/Micro characteristics - Prison 
   "mun_has_prison", "mic_has_prison"
   ))
+
+sinan_xpert$id_municip <- as.factor(sinan_xpert$id_municip)
+sinan_xpert$id_municip_not <- as.factor(sinan_xpert$id_municip_not)
+sinan_xpert$id_micro <- as.factor(sinan_xpert$id_micro)
+sinan_xpert$sg_uf <- as.factor(sinan_xpert$sg_uf)
+sinan_xpert$sg_uf_not <- as.factor(sinan_xpert$sg_uf_not)
+
                           
 # write file --------------------------------------------------------------
 save(sinan_xpert, file = "data/sinan_xpert.Rdata")
