@@ -1,0 +1,129 @@
+---
+title: "RR-TB Updates"
+author: "Sarah Baum"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+## Notes: Takes figures from tt_gam_plots.R 
+source(here::here("code/dependencies.R"))
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Model Specification
+
+### Overview
+
+-   State-level hierarchical generalized additive model (GAM) that models the prevalence of RR-TB positive cases per quarter among incident TB cases between 2014-2019
+
+-   Fit smoothing functions to reduce the noise we were seeing in previous models
+
+-   Models risk of positivity by characteristics of patient and municipality where they reside
+
+    <!-- -   Note: Between 2014-2019, \~3,300 cases diagnosed outside of patient's state of residence; \~88,000 cases diagnosed outside patient's municipality of residence (e.g. cases are not being attributed to municipalities/states in which cases are generated) -->
+
+-   Separate models for new cases and previously treated cases (e.g. relapse and re-entry)
+
+### Set Up
+
+```{r model specification, eval = FALSE}
+result ~ s(state, bs = "re") + s(time) + s(time, by = state, id = 1) + age_cat + hiv_status + sex + health_unit + bf_cat + urban_cat + has_prison + fhs_cat
+```
+
+-   Random intercept for each state (patient state of residence)
+
+-   A different smooth function for time by state with a shared smoothing parameter
+
+-   Each state-level smoothing parameter varies around a grand smooth function for time to allow for pooling across states
+
+-   Fixed effects for patient-level characteristics:
+
+    -   Age
+    -   HIV status
+    -   Sex
+    -   Level of health unit where patient is diagnosed - Based on CNES merge
+
+-   Fixed effects for characteristics of region where patient resides (either municipality or micro-region level):
+
+    -   Urbanicity - Percent of the population in urban setting (2010 census)
+    -   Bolsa Familia coverage - Percent of the population benefiting from BF (BF: SAGICAD, 2018; Denominator: 2010 Census)
+    -   Presence of prison - Municipality has prison at some point during 2014-2019 period (SISPEN)
+    -   FHS Coverage - Average number of health teams per 4,000 people between 2014-2019
+
+### Specifications
+
+-   Model 1 - 2014-2019
+
+-   Model 2 - 2016-2019
+
+-   Run separately by case type (new vs. previously treated (relapse, re-entry))
+
+
+
+
+
+# Model Output
+
+## National-level estimates
+
+```{r, echo = FALSE}
+knitr::include_graphics("output/plots/plot_national_all.png")
+```
+
+
+
+
+## State-level estimates
+
+### New Cases
+
+A. Municipality-level
+
+```{r mun.new, echo = FALSE, out.width = '100%'}
+knitr::include_graphics("output/plots/plot_mun_new.png")
+```
+
+B. Microregion-level
+
+```{r mic.new, echo = FALSE, out.width = '100%'}
+knitr::include_graphics("output/plots/plot_mic_new.png")
+```
+
+### Previous Cases
+
+A. Municipality-level
+
+```{r mun.prev, echo = FALSE, out.width = '100%'}
+knitr::include_graphics("output/plots/plot_mun_prev.png")
+```
+
+B. Microregion-level
+
+```{r mic.prev, echo = FALSE, out.width = '100%'}
+knitr::include_graphics("output/plots/plot_mic_prev.png")
+```
+
+C. Municipality and Micro-region
+
+```{r mun.mic.prev, echo = FALSE, out.width = '100%'}
+knitr::include_graphics("output/plots/plot_mun.mic_prev.png")
+```
+
+
+
+## Bootstrapped Results
+### New Cases 
+```{r boot.net, echo = FALSE, out.width = '100%'}
+knitr::include_graphics("output/plots/plot_boot_nat_new.png")
+knitr::include_graphics("output/plots/plot_boot_new.png")
+```
+
+
+### Previous Cases
+```{r boot.prev, echo = FALSE, out.width = '100%'}
+knitr::include_graphics("output/plots/plot_boot_nat_prev.png")
+knitr::include_graphics("output/plots/plot_boot_prev.png")
+```
