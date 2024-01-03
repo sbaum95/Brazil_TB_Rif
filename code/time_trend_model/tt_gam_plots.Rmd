@@ -30,24 +30,30 @@ options(dplyr.summarise.inform = FALSE)
 
 
 # Load all model fits from "tt_gam_models.R"
-load(here::here("output/fits/mod1_new.rda"))
-load(here::here("output/fits/mod2_new.rda"))
-load(here::here("output/fits/mod3_new.rda"))
-load(here::here("output/fits/mod4_all.rda"))
-load(here::here("output/fits/mod5_all.rda"))
+load(here::here("output/fits/mun_new_mod1.rda"))
+load(here::here("output/fits/mun_new_mod2.rda"))
+
+load(here::here("output/fits/mun_prev_mod1.rda"))
+load(here::here("output/fits/mun_prev_mod2.rda"))
+
+# load(here::here("output/fits/mod1_new.rda"))
+# load(here::here("output/fits/mod2_new.rda"))
+# load(here::here("output/fits/mod3_new.rda"))
+# load(here::here("output/fits/mod4_all.rda"))
+# load(here::here("output/fits/mod5_all.rda"))
 
 # load(here::here("output/fits/new_adjusted.rda"))
 # load(here::here("output/fits/new_adjusted_hu.Rda"))
 # load(here::here("output/fits/new_adjusted_hu_fhs.rda"))
 # load(here::here("output/fits/new_adjusted_post2015.Rda"))
-
-load(here::here("output/fits/reentry_null.Rda"))
-load(here::here("output/fits/reentry_adjusted.Rda"))
-load(here::here("output/fits/reentry_adjusted_post2015.Rda"))
-
-load(here::here("output/fits/relapse_null.Rda"))
-load(here::here("output/fits/relapse_adjusted.Rda"))
-load(here::here("output/fits/relapse_adjusted_post2015.Rda"))
+# 
+# load(here::here("output/fits/reentry_null.Rda"))
+# load(here::here("output/fits/reentry_adjusted.Rda"))
+# load(here::here("output/fits/reentry_adjusted_post2015.Rda"))
+# 
+# load(here::here("output/fits/relapse_null.Rda"))
+# load(here::here("output/fits/relapse_adjusted.Rda"))
+# load(here::here("output/fits/relapse_adjusted_post2015.Rda"))
 ```
 
 
