@@ -1,0 +1,689 @@
+---
+title: "RR-TB Updates"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r setup, include = FALSE, messages = FALSE, warning = FALSE}
+source(here::here("code/dependencies.R"))
+
+library(mgcv)
+library(gratia)
+library(itsadug)
+library(tidygam)
+
+load(here::here("data/sinan_xpert.Rdata"))
+
+load(here::here("data/mdf_new_grp.Rdata"))
+load(here::here("data/mdf_new_ind.Rdata"))
+load(here::here("data/mdf_reentry_ind.Rdata"))
+load(here::here("data/mdf_relapse_ind.Rdata"))
+
+options(dplyr.summarise.inform = FALSE)
+
+
+# Load all model fits from "tt_gam_models.R"
+load(here::here("output/fits/new_adjusted.rda"))
+load(here::here("output/fits/new_adjusted_hu.Rda"))
+load(here::here("output/fits/new_adjusted_hu_fhs.rda"))
+load(here::here("output/fits/new_adjusted_post2015.Rda"))
+
+load(here::here("output/fits/reentry_adjusted.Rda"))
+load(here::here("output/fits/reentry_adjusted_post2015.Rda"))
+load(here::here("output/fits/relapse_adjusted.Rda"))
+load(here::here("output/fits/relapse_adjusted_post2015.Rda"))
+```
+
+
+# Model Aim
+* Relatively simple model that models trends in RR-TB prevalence over time, addressing potential bias in who gets tested as well as varied roll-out of share of population being tested
+
+
+```{r testing over time, echo=FALSE, fig.height=6, fig.width= 12, warning=FALSE, messages=FALSE}
+sinan_xpert %>% 
+  group_by(diag_qrt, state_nm) %>% 
+  filter(!is.na(state_nm)) %>% 
+  summarize(pct_tested = sum(test_molec %in% c("1", "2", "3", "4")/n())) %>% 
+  ggplot() + 
+  geom_line(aes(x = diag_qrt, y = pct_tested, group = state_nm)) + 
+  xlab("Quarter") + 
+  ylab("Percent of cases tested with Xpert") + 
+  ggtitle("Trends in testing by state and quarter") + 
+  facet_wrap(~state_nm) + 
+    theme(strip.background = element_blank(),
+        strip.text = element_text(size = rel(1), 
+                                  margin = margin()),
+        panel.spacing = unit(3, "pt"), 
+        legend.title = element_text(size = 11), 
+        legend.text = element_text(size = 11), 
+        title = element_text(size = 12)) + 
+  theme_bw()
+```
+
+
+# Model Specification
+* State-level hierarchical generalized additive model (GAM) that models the prevalence of RR-TB positive cases per quarter among incident TB cases between 2014-2019. 
+* Models risk of positivity by patient and municipality characteristics (currently, HIV status, age category, sex, and health unit)
+* Separate models are run for new TB cases, re-entry cases, and relapsed cases 
+
+
+```{r model specification, eval = FALSE}
+result ~ s(state, bs = "re") + s(time) + s(time, by = state, id = 1) + age_cat + hiv_status + sex
+```
+
+Model includes: 
+
+* Random intercept for each state
+
+* A different smooth function for time by state with a shared smoothing parameter
+
+* Each state-level smoothing parameter varies around a grand smooth function for time to allow for pooling across states
+
+* Fixed effects for patient-level characteristics (e.g. age, HIV status, sex) and municipality-level characteristics (e.g. health unit of diagnosis/treatment, FHS coverage by enrollment)
+
+
+
+
+
+
+# New Cases
+<!-- ## Null time trend model  -->
+<!-- ```{r plot - new null model, warning = FALSE, messages = FALSE, echo = FALSE, fig.height = 6, fig.width = 12} -->
+<!-- ## Load model -->
+<!-- load("output/fits/new_null.rda") -->
+
+<!-- ### Predict output -->
+<!-- new_null_fit <- fitted_values(new_null, data = mdf_new_grp, scale = "response") -->
+
+
+
+<!-- ### Plot fitted model -->
+<!-- ggplot() + -->
+
+<!--   # add pct tested and scale by number tested -->
+<!--   geom_point( -->
+<!--     data = mdf_new_grp %>% -->
+<!--       group_by(state_nm, time) %>% -->
+<!--       summarize(num_tested = sum(Positive + Negative), -->
+<!--                 obs_pct_pos = if_else(is.nan(sum(Positive)/sum(Positive + Negative)), 0, sum(Positive)/sum(Positive + Negative))), -->
+<!--     aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.5) + -->
+
+<!--   # add fitted values -->
+<!--   geom_line(data = new_null_fit %>%  -->
+<!--               filter(!is.na(fitted)) %>%  -->
+<!--               group_by(state_nm, time) %>%  -->
+<!--               summarize(fitted = sum(fitted*cases)/sum(cases)), aes(time, fitted, group = state_nm, color = "Fitted"))+ -->
+
+<!--   xlab("Quarter") +  -->
+<!--   ylab("Percent positive") +  -->
+<!--   ggtitle("New: State-level time trend (Null)") +  -->
+<!--   facet_wrap(~state_nm) +  -->
+<!--   theme(strip.background = element_blank(), -->
+<!--         strip.text = element_text(size = rel(0.8),  -->
+<!--                                   margin = margin()), -->
+<!--         panel.spacing = unit(3, "pt"),  -->
+<!--         legend.title = element_text(size = 8),  -->
+<!--         legend.text = element_text(size = 8),  -->
+<!--         title = element_text(size = 10)) +  -->
+<!--   scale_size( -->
+<!--     range = c(0.5, 5) -->
+<!--   ) + -->
+<!--   labs(size = "Number of cases tested (Observed)", color = "")  -->
+<!--   # scale_fill_manual(values = c("Fitted")) +  -->
+<!--   # scale_color_manual(name="Lines", -->
+<!--   #                    labels=c("Fitted", "Fitted - geom_line", "Observed"), -->
+<!--   #                    values=c("red", "blue", "black")) -->
+
+
+<!-- ``` -->
+
+
+
+
+
+## Adjusted Model
+### Same scale
+```{r plot - new adjusted time trend fixed, warning = FALSE, messages = FALSE, echo = FALSE, fig.height = 6, fig.width = 12}
+
+### Predict output
+new_adjusted_fit <- fitted_values(new_adjusted, data = mdf_new_grp, scale = "response")
+
+
+
+
+### Plot fitted model - same scale 
+ggplot() +
+  
+  # add pct tested and scale by number tested
+  geom_point(
+    data = mdf_new_grp %>%
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(Positive + Negative),
+                obs_pct_pos = if_else(is.nan(sum(Positive)/sum(Positive + Negative)), 0, sum(Positive)/sum(Positive + Negative))),
+    aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.5) +
+  
+  # add fitted values
+  geom_line(data = new_adjusted_fit %>% 
+                filter(!is.na(fitted)) %>% 
+              group_by(state_nm, time) %>% 
+              summarize(fitted = sum(fitted*cases)/sum(cases)), 
+            aes(time, fitted, group = state_nm, color = "Fitted")) +
+  
+  xlab("Quarter") + 
+  ylab("Percent positive") + 
+  ggtitle("New: State-level time trend (Adjusted - Patient age, HIV status, sex)") + 
+  facet_wrap(~state_nm) + 
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = rel(0.8), 
+                                  margin = margin()),
+        panel.spacing = unit(3, "pt"), 
+        legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 8), 
+        title = element_text(size = 10)) + 
+  scale_size(
+    range = c(0.5, 5)
+  ) +
+  labs(size = "Number of cases tested (Observed)", color = "") 
+# scale_fill_manual(values = c("Fitted")) + 
+# scale_color_manual(name="Lines",
+#                    labels=c("Fitted", "Fitted - geom_line", "Observed"),
+#                    values=c("red", "blue", "black"))
+
+
+```
+
+### Varied scale
+```{r plot - new adjusted time trend varied, warning = FALSE, messages = FALSE, echo = FALSE, fig.height = 6, fig.width = 12}
+
+new_adjusted_hu_fit <- fitted_values(new_adjusted_hu, data = mdf_new_grp, scale = "response")
+
+
+
+
+
+
+### Plot fitted model - varying scales 
+ggplot() +
+  
+  # add pct tested and scale by number tested
+  geom_point(
+    data = mdf_new_grp %>%
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(Positive + Negative),
+                obs_pct_pos = if_else(is.nan(sum(Positive)/sum(Positive + Negative)), 0, sum(Positive)/sum(Positive + Negative))),
+    aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.5) +
+  
+  # add fitted values - Sex, Age, HIV
+  geom_line(data = new_adjusted_fit %>% 
+                filter(!is.na(fitted)) %>% 
+              group_by(state_nm, time) %>% 
+              summarize(fitted = sum(fitted*cases)/sum(cases)), 
+            aes(time, fitted, group = state_nm, color = "Fitted")) +
+
+  xlab("Quarter") + 
+  ylab("Percent positive") + 
+  ggtitle("New: State-level time trend (Adjusted - Patient age, HIV status, sex)") + 
+  facet_wrap(~state_nm, scales = "free") + 
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = rel(0.8), 
+                                  margin = margin()),
+        panel.spacing = unit(3, "pt"), 
+        legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 8), 
+        title = element_text(size = 10)) + 
+  scale_size(
+    range = c(0.5, 5)
+  ) +
+  labs(size = "Number of cases tested (Observed)", color = "Model") 
+# scale_fill_manual(values = c("Fitted")) + 
+# scale_color_manual(name="Lines",
+#                    labels=c("Fitted", "Fitted - geom_line", "Observed"),
+#                    values=c("red", "blue", "black"))
+
+```
+
+
+## Comparing Models 
+* Adjusted - HIV status, sex, age
+* Adjusted+ - HIV status, sex, age, health unit
+* Post 2015 adjusted - HIV status, sex, age, health unit
+```{r plot - All together, warning = FALSE, messages = FALSE, echo = FALSE, fig.height = 6, fig.width = 12}
+
+# predict output
+mod1_new_pred <- fitted_values(mod1_new, data = mdf_new_grp, scale = "response")
+mod2_new_pred <- fitted_values(mod2_new, data = mdf_new_grp %>% filter(time > 8), scale = "response")
+mod3_new_pred <- fitted_values(mod3_new, data = mdf_new_grp, scale = "response")
+# new_adjusted_hu_fhs_fit <- fitted_values(new_adjusted_hu_fhs, data = mdf_new_grp, scale = "response")
+# new_adjusted_hu_urban_fit <- fitted_values(new_adjusted_hu_fhs, data = mdf_new_grp, scale = "response")
+# new_adjusted_post2015_fit <- fitted_values(new_adjusted_post2015, data = mdf_new_grp %>% filter(time>8), scale = "response")
+
+
+
+### Plot fitted models 
+ggplot() +
+  
+  # add pct tested and scale by number tested
+  geom_point(
+    data = mdf_new_grp %>%
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(Positive + Negative),
+                obs_pct_pos = if_else(is.nan(sum(Positive)/sum(Positive + Negative)), 0, sum(Positive)/sum(Positive + Negative))),
+    aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.5) +
+  
+    # add fitted values - Adjusted (health unit, sex, age, hiv status )
+  geom_line(data = mod1_new_pred %>% 
+                filter(!is.na(fitted)) %>% 
+              group_by(state_nm, time) %>% 
+              summarize(fitted = sum(fitted*cases)/sum(cases)), 
+            aes(time, fitted, group = state_nm, color = "Model 1 - Adjusted")) +
+  
+  # 
+  # add fitted values - Adjusted (health unit, sex, age, hiv status )
+  geom_line(data = mod2_new_pred %>%
+                filter(!is.na(fitted)) %>%
+              group_by(state_nm, time) %>%
+              summarize(fitted = sum(fitted*cases)/sum(cases)),
+            aes(time, fitted, group = state_nm, color = "Model 2 - Adjusted >2015")) +
+  
+    # add fitted values - Adjusted (health unit, sex, age, hiv status )
+  geom_line(data = mod3_new_pred %>%
+                filter(!is.na(fitted)) %>%
+              group_by(state_nm, time) %>%
+              summarize(fitted = sum(fitted*cases)/sum(cases)),
+            aes(time, fitted, group = state_nm, color = "Model 3 - Adjusted + HIV*Sex*Age")) +
+  # 
+  #  # add fitted values - Adjusted (health unit, sex, age, hiv status, FHS)
+  # geom_line(data = new_adjusted_hu_fhs_fit %>% 
+  #               filter(!is.na(fitted)) %>% 
+  #             group_by(state_nm, time) %>% 
+  #             summarize(fitted = sum(fitted*cases)/sum(cases)), 
+  #           aes(time, fitted, group = state_nm, color = "Model 3 - Health unit, Sex, Age, HIV status, FHS")) +
+  # 
+  #    # add fitted values - Adjusted (health unit, sex, age, hiv status, FHS)
+  # geom_line(data = new_adjusted_post2015_fit %>% 
+  #               filter(!is.na(fitted)) %>% 
+  #             group_by(state_nm, time) %>% 
+  #             summarize(fitted = sum(fitted*cases)/sum(cases)), 
+  #           aes(time, fitted, group = state_nm, color = "Model 4 - Post 2015, Health unit, Sex, Age, HIV status")) +
+  
+  
+  xlab("Quarter") + 
+  ylab("Percent positive") + 
+  ggtitle("New: Comparing state-level time trend fits") + 
+  facet_wrap(~state_nm, scales = "free") + 
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = rel(0.8), 
+                                  margin = margin()),
+        panel.spacing = unit(3, "pt"), 
+        legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 8), 
+        title = element_text(size = 10)) + 
+  scale_size(
+    range = c(0.5, 5)
+  ) +
+  labs(size = "Number of cases tested (Observed)", color = "Models") 
+
+scale_fill_manual(values = c("Fitted")) +
+scale_color_manual(name="Lines",
+                   labels=c("Model 1 - Sex, Age, HIV status",
+                            "Model 2 - Health unit, Sex, Age, HIV status",
+                            "Model 3 - Health unit, Sex, Age, HIV status, FHS",
+                            "Model 4 - Post 2015, Health unit, Sex, Age, HIV status"),
+                   values=c("red", "blue", "black", "green"))
+
+
+
+```
+
+
+
+
+
+<!-- ## Restricting to cases after 2015 -->
+<!-- ```{r plot - new adjusted > 2015, warning = FALSE, messages = FALSE, echo = FALSE, fig.height = 6, fig.width = 12} -->
+
+<!-- # load model  -->
+<!-- load("output/fits/new_adjusted_post2015.rda") -->
+
+<!-- ### Predict results -->
+<!-- new_adjusted_post2015_fit <- fitted_values(new_adjusted_post2015, scale = "response") %>%  -->
+<!--   right_join(mdf_new_grp %>% ungroup() %>% select(state, state_nm) %>% unique(), by = "state") -->
+
+
+
+
+
+
+<!-- ### Plot fitted model -->
+<!-- ggplot() + -->
+
+<!--   # add pct tested and scale by number tested -->
+<!--   geom_point( -->
+<!--     data = mdf_new_grp %>% -->
+<!--       filter(time > 8) %>%  -->
+<!--       group_by(state_nm, time) %>% -->
+<!--       summarize(num_tested = sum(Positive + Negative), -->
+<!--                 obs_pct_pos = if_else(is.nan(sum(Positive)/sum(Positive + Negative)), 0, sum(Positive)/sum(Positive + Negative))), -->
+<!--     aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.5) + -->
+
+<!--   # add fitted values -->
+<!--   geom_line(data = new_adjusted_post2015_fit %>%  -->
+<!--               group_by(state_nm, time) %>%  -->
+<!--               summarize(fitted = sum(fitted)/n()), aes(time, fitted, group = state_nm, color = "Fitted"))+ -->
+
+<!--   xlab("Quarter") +  -->
+<!--   ylab("Percent positive") +  -->
+<!--   ggtitle("New: State-level time trend (Adjusted, >2015)") +  -->
+<!--   facet_wrap(~state_nm, scales = "free") +  -->
+<!--   theme(strip.background = element_blank(), -->
+<!--         strip.text = element_text(size = rel(0.8),  -->
+<!--                                   margin = margin()), -->
+<!--         panel.spacing = unit(3, "pt"),  -->
+<!--         legend.title = element_text(size = 8),  -->
+<!--         legend.text = element_text(size = 8),  -->
+<!--         title = element_text(size = 10)) +  -->
+<!--   scale_size( -->
+<!--     range = c(0.5, 5) -->
+<!--   ) + -->
+<!--   labs(size = "Number of cases tested (Observed)", color = "")  -->
+<!-- # scale_fill_manual(values = c("Fitted")) +  -->
+<!-- # scale_color_manual(name="Lines", -->
+<!-- #                    labels=c("Fitted", "Fitted - geom_line", "Observed"), -->
+<!-- #                    values=c("red", "blue", "black")) -->
+
+<!-- ``` -->
+
+
+\newpage
+
+
+# Re-Entry Cases
+## Adjusted Model
+### Same scale
+```{r plot - re-entry adjusted model, warning = FALSE, messages = FALSE, echo = FALSE, fig.height = 6, fig.width = 12}
+
+### Predict output
+reentry_adjusted_fit <- fitted_values(reentry_adjusted, scale = "response") %>% 
+  right_join(mdf_new_ind %>% select(state, state_nm) %>% unique(), by = "state")
+
+
+
+
+
+### Plot fitted model
+ggplot() +
+  
+  # add pct tested and scale by number tested
+  geom_point(
+    data = mdf_reentry_ind %>%
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(!is.na(result)),
+                positive = sum(result == "1", na.rm = TRUE),
+                obs_pct_pos = if_else(is.na(sum(result == "1", na.rm = TRUE)/num_tested), 0, sum(result == "1", na.rm = TRUE)/num_tested)),
+    aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.3) +
+  
+  # add fitted values
+  geom_line(data = reentry_adjusted_fit %>% 
+              group_by(state_nm, time) %>% 
+              summarize(fitted = sum(fitted)/n()), aes(time, fitted, group = state_nm, color = "Fitted"))+
+  
+  xlab("Quarter") + 
+  ylab("Percent positive") + 
+  ggtitle("Re-entry: State-level time trend (Adjusted - Patient age, HIV status, sex)") + 
+  facet_wrap(~state_nm) + 
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = rel(0.8), 
+                                  margin = margin()),
+        panel.spacing = unit(3, "pt"), 
+        legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 8), 
+        title = element_text(size = 10)) + 
+  scale_size(
+    range = c(0.5, 5)
+  ) +
+  labs(size = "Number of cases tested (Observed)", color = "") 
+# scale_fill_manual(values = c("Fitted")) + 
+# scale_color_manual(name="Lines",
+#                    labels=c("Fitted", "Fitted - geom_line", "Observed"),
+#                    values=c("red", "blue", "black"))
+
+```
+
+
+### Varied scale
+```{r plot - re-entry adjusted model varied, warning = FALSE, messages = FALSE, echo = FALSE, fig.height = 6, fig.width = 12}
+### Plot fitted model
+ggplot() +
+  
+  # add pct tested and scale by number tested
+  geom_point(
+    data = mdf_reentry_ind %>%
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(!is.na(result)),
+                positive = sum(result == "1", na.rm = TRUE),
+                obs_pct_pos = if_else(is.na(sum(result == "1", na.rm = TRUE)/num_tested), 0, sum(result == "1", na.rm = TRUE)/num_tested)),
+    aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.3) +
+  
+  # add fitted values
+  geom_line(data = reentry_adjusted_fit %>% 
+              group_by(state_nm, time) %>% 
+              summarize(fitted = sum(fitted)/n()), aes(time, fitted, group = state_nm, color = "Fitted"))+
+  
+  xlab("Quarter") + 
+  ylab("Percent positive") + 
+  ggtitle("Re-entry: State-level time trend (Adjusted - Patient age, HIV status, sex)") + 
+  facet_wrap(~state_nm, scales = "free") + 
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = rel(0.8), 
+                                  margin = margin()),
+        panel.spacing = unit(3, "pt"), 
+        legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 8), 
+        title = element_text(size = 10)) + 
+  scale_size(
+    range = c(0.5, 5)
+  ) +
+  labs(size = "Number of cases tested (Observed)", color = "") 
+# scale_fill_manual(values = c("Fitted")) + 
+# scale_color_manual(name="Lines",
+#                    labels=c("Fitted", "Fitted - geom_line", "Observed"),
+#                    values=c("red", "blue", "black"))
+
+```
+\newpage
+### Post 2015 
+```{r plot - re-entry adjusted model post2015, warning = FALSE, messages = FALSE, echo = FALSE, fig.height = 6, fig.width = 12}
+### Predict output
+reentry_adjusted_post2015_fit <- fitted_values(reentry_adjusted_post2015, scale = "response") %>% 
+  right_join(mdf_new_ind %>% select(state, state_nm) %>% unique(), by = "state")
+
+
+
+### Plot fitted model
+ggplot() +
+  
+  # add pct tested and scale by number tested
+  geom_point(
+    data = mdf_reentry_ind %>%
+      filter(time > 8) %>% 
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(!is.na(result)),
+                positive = sum(result == "1", na.rm = TRUE),
+                obs_pct_pos = if_else(is.na(sum(result == "1", na.rm = TRUE)/num_tested), 0, sum(result == "1", na.rm = TRUE)/num_tested)),
+    aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.3) +
+  
+  # add fitted values
+  geom_line(data = reentry_adjusted_post2015_fit %>% 
+              group_by(state_nm, time) %>% 
+              summarize(fitted = sum(fitted)/n()), aes(time, fitted, group = state_nm, color = "Fitted"))+
+  
+  xlab("Quarter") + 
+  ylab("Percent positive") + 
+  ggtitle("Re-entry: State-level time trend post 2015 (Adjusted - Patient age, HIV status, sex, health unit)") + 
+  facet_wrap(~state_nm, scales = "free") + 
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = rel(0.8), 
+                                  margin = margin()),
+        panel.spacing = unit(3, "pt"), 
+        legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 8), 
+        title = element_text(size = 10)) + 
+  scale_size(
+    range = c(0.5, 5)
+  ) +
+  labs(size = "Number of cases tested (Observed)", color = "") 
+# scale_fill_manual(values = c("Fitted")) + 
+# scale_color_manual(name="Lines",
+#                    labels=c("Fitted", "Fitted - geom_line", "Observed"),
+#                    values=c("red", "blue", "black"))
+
+```
+
+\newpage
+
+# Relapse Cases
+## Adjusted Model
+```{r plot - relapse adjusted model, warning = FALSE, messages = FALSE, echo = FALSE, fig.height = 6, fig.width = 12}
+### Predict output
+relapse_adjusted_fit <- fitted_values(relapse_adjusted, scale = "response") %>% 
+  right_join(mdf_relapse_ind %>% select(state, state_nm) %>% unique(), by = "state")
+
+
+### Plot fitted model
+ggplot() +
+  # add pct tested and scale by number tested
+  geom_point(
+    data = mdf_relapse_ind %>%
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(!is.na(result)),
+                positive = sum(result == "1", na.rm = TRUE),
+                obs_pct_pos = if_else(is.na(sum(result == "1", na.rm = TRUE)/num_tested), 0, sum(result == "1", na.rm = TRUE)/num_tested)),
+    aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.3) +
+  
+  # add fitted values
+  geom_line(data = relapse_adjusted_fit %>% 
+              group_by(state_nm, time) %>% 
+              summarize(fitted = sum(fitted)/n()), aes(time, fitted, group = state_nm, color = "Fitted"))+
+  
+  xlab("Quarter") + 
+  ylab("Percent positive") + 
+  ggtitle("Relapse: State-level time trend (Adjusted - Patient age, HIV status, sex)") + 
+  facet_wrap(~state_nm) + 
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = rel(0.8), 
+                                  margin = margin()),
+        panel.spacing = unit(3, "pt"), 
+        legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 8), 
+        title = element_text(size = 10)) + 
+  scale_size(
+    range = c(0.5, 5)
+  ) +
+  labs(size = "Number of cases tested (Observed)", color = "") 
+# scale_fill_manual(values = c("Fitted")) + 
+# scale_color_manual(name="Lines",
+#                    labels=c("Fitted", "Fitted - geom_line", "Observed"),
+#                    values=c("red", "blue", "black"))
+
+```
+
+```{r plot - relapse adjusted model varied, warning = FALSE, messages = FALSE, echo = FALSE, fig.height = 6, fig.width = 12, eval = FALSE}
+### Plot fitted model
+ggplot() +
+  # add pct tested and scale by number tested
+  geom_point(
+    data = mdf_relapse_ind %>%
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(!is.na(result)),
+                positive = sum(result == "1", na.rm = TRUE),
+                obs_pct_pos = if_else(is.na(sum(result == "1", na.rm = TRUE)/num_tested), 0, sum(result == "1", na.rm = TRUE)/num_tested)),
+    aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.3) +
+  
+  # add fitted values
+  geom_line(data = relapse_adjusted_fit %>% 
+              group_by(state_nm, time) %>% 
+              summarize(fitted = sum(fitted)/n()), aes(time, fitted, group = state_nm, color = "Fitted"))+
+  
+  xlab("Quarter") + 
+  ylab("Percent positive") + 
+  ggtitle("Relapse: State-level time trend (Adjusted - Patient age, HIV status, sex)") + 
+  facet_wrap(~state_nm, scales = "free") + 
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = rel(0.8), 
+                                  margin = margin()),
+        panel.spacing = unit(3, "pt"), 
+        legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 8), 
+        title = element_text(size = 10)) + 
+  scale_size(
+    range = c(0.5, 5)
+  ) +
+  labs(size = "Number of cases tested (Observed)", color = "") 
+# scale_fill_manual(values = c("Fitted")) + 
+# scale_color_manual(name="Lines",
+#                    labels=c("Fitted", "Fitted - geom_line", "Observed"),
+#                    values=c("red", "blue", "black"))
+
+```
+
+
+## Post 2015
+```{r plot - relapse adjusted model post 2015, warning = FALSE, messages = FALSE, echo = FALSE, fig.height = 6, fig.width = 12}
+
+
+relapse_adjusted_post2015_fit <- fitted_values(relapse_adjusted_post2015, data = mdf_relapse_ind %>% filter(time >8), scale = "response")
+
+
+### Plot fitted model
+ggplot() +
+  # add pct tested and scale by number tested
+  geom_point(
+    data = mdf_relapse_ind %>%
+      filter(time > 8) %>% 
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(!is.na(result)),
+                positive = sum(result == "1", na.rm = TRUE),
+                obs_pct_pos = if_else(is.na(sum(result == "1", na.rm = TRUE)/num_tested), 0, sum(result == "1", na.rm = TRUE)/num_tested)),
+    aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.3) +
+  
+  # add fitted values
+  geom_line(data = relapse_adjusted_post2015_fit %>% 
+              filter(!is.na(fitted)) %>% 
+              group_by(state_nm, time) %>% 
+              summarize(fitted = sum(fitted)/n()), aes(time, fitted, group = state_nm, color = "Fitted")) +
+  
+  xlab("Quarter") + 
+  ylab("Percent positive") + 
+  ggtitle("Relapse: State-level time trend post-2015") + 
+  facet_wrap(~state_nm) + 
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = rel(0.8), 
+                                  margin = margin()),
+        panel.spacing = unit(3, "pt"), 
+        legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 8), 
+        title = element_text(size = 10)) + 
+  scale_size(
+    range = c(0.5, 5)
+  ) +
+  labs(size = "Number of cases tested (Observed)", color = "") 
+# scale_fill_manual(values = c("Fitted")) + 
+# scale_color_manual(name="Lines",
+#                    labels=c("Fitted", "Fitted - geom_line", "Observed"),
+#                    values=c("red", "blue", "black"))
+
+```
+
+\newpage
+
+# Going Forward: 
+* Individual- and municipality-level covariates to add: 
+  * Add health unit as another covariate
+  * Exploring covariates for: urbanicity, Bolsa Familia Coverage, FHS Coverage, Household crowding, Treatment abadonment rate per municipality
+  
+* Come up with inclusion rules for observations (e.g. after certain date, above a certain percent tested)
+

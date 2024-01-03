@@ -1,0 +1,151 @@
+---
+title: "Updates - Aug 23, 2023"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+## Updates: 
+* Changed age reference category to larger (25-34)
+* Expanded priors for intercept and betas to N(0,10)
+* Collapsed into single model - Added smooth time trend
+* Looked into "Mato Grosso problem" -- Issue with estimates not being pulled down enough (persistent even with different specifications)
+  
+
+  
+## GAM Models: 
+group proportion OR individual result ~ 1 + s(state, bs = "re") + s(time, by = state, bs = "re") + age_cat + hiv + sex
+
+```{r}
+source(here::here("code/dependencies.R"))
+## Compare to GAM Model 
+
+## Group GAM 
+load("/Users/sarahbaum/Dropbox (Personal)/Research/Brazil TB/Rif_Project/output/fits/gam_mod_4.rda")
+load("/Users/sarahbaum/Dropbox (Personal)/Research/Brazil TB/Rif_Project/data/mdf_new_grp.Rdata")
+mdf_new_grp$fitted <- fitted.values(gam_mod_4)
+
+
+## Individual GAM 
+load("/Users/sarahbaum/Dropbox (Personal)/Research/Brazil TB/Rif_Project/output/fits/gam_mod_5.rda")
+load("/Users/sarahbaum/Dropbox (Personal)/Research/Brazil TB/Rif_Project/data/mdf_new_ind.Rdata")
+mdf_new_ind$fitted <- predict(gam_mod_5, newdata = mdf_new_ind, type = "response")
+```
+
+
+```{r}
+ggplot() +
+  # Observed
+  geom_point(data = mdf_new_grp %>%
+               group_by(state, time) %>%
+               summarize(tested = sum(Positive + Negative), 
+                 obs_pct = sum(Positive)/tested),
+             aes(x = time, y = obs_pct, group = state, size = tested), alpha = 0.4) + 
+  
+  # Group
+  geom_line(data = mdf_new_grp %>%
+               group_by(state, time) %>%
+               summarize(cases = n(),
+                         pred_pct = sum(fitted)/cases),
+             aes(x = time, y = pred_pct), color = "red") +
+  
+  # Individual 
+  geom_line(data = mdf_new_ind %>%
+               filter(!is.na(fitted)) %>%
+               group_by(state, time) %>%
+               summarize(cases = n(),
+                         pred_pct = sum(fitted)/cases),
+             aes(x = time, y = pred_pct), color = "blue") +
+    scale_size(
+    range = c(0.5, 5)
+  ) + 
+  facet_wrap(~state)
+
+```
+
+
+
+
+
+
+
+
+
+### Model 1: Random intercept for state + smooth for time (Full Data)
+
+Positive | trials(cases) ~ (1|state) + s(time, by = state, bs = "fs") + age_cat + hiv + sex
+
+** One thing I'm seeing now is that I might need to add another term for time to get group-level time estimate...double check with FS help
+
+```{r}
+load("/Users/sarahbaum/Dropbox (Personal)/Research/Brazil TB/Rif_Project/output/fits/brm_mod_1.rda")
+
+# conditional effects
+conditional_effects(brm_mod_1)
+```
+
+
+```{r}
+# predictions from BRM 
+  ggplot() + 
+  # observed - size of points
+  geom_point(data = mdf_new_grp %>%
+               group_by(state, time) %>%
+               summarize(cases = sum(Positive + Negative),
+                         obs_pct = if_else(is.nan(sum(Positive)/sum(Positive + Negative)), 0, sum(Positive)/sum(Positive + Negative))),
+             aes(x = time, y = obs_pct, size = cases), alpha = 0.4) +
+  # Group 
+  geom_line(data = draws_predicted %>% 
+              group_by(state, time, age_cat, hiv, sex) %>% 
+              summarize(mean_group = mean(.epred_prop), 
+                        med_group = median(.epred_prop),
+                        cases = unique(cases)) %>% 
+              group_by(state, time) %>% 
+              summarize(mean_marginal = if_else(is.nan(sum(mean_group*cases)/sum(cases)), 0, sum(mean_group*cases)/sum(cases))),
+            aes(x = time, y = mean_marginal), color = "red") +
+  scale_size(
+    range = c(0.5, 5)
+  ) + 
+  facet_wrap(~state)
+
+```
+
+
+
+
+
+### Model 2: Random intercept + group-specific wiggliness around common smooth  [GI - Individual penalty = Differing wiggliness] (Subset)
+
+Positive | trials(cases) ~ s(state, bs = "re") + s(time, bs = "tp") + s(time, by = state, bs = "tp") + age_cat + hiv + sex
+
+** Specifies random intercept for state explicitly and include group term for time
+
+```{r}
+load("/Users/sarahbaum/Dropbox (Personal)/Research/Brazil TB/Rif_Project/output/fits/brm_mod_GI.rda")
+conditional_effects(brm_mod_GI)
+```
+
+
+### Model 3: Random intercept (in FS) + Random slopes around common smooth [GS - Shared penalty = Same wiggliness]  (Subset)
+
+Positive | trials(cases) ~ 1 + (1 | state) + s(time) + s(time, by = state, bs = "fs") + age_cat + hiv + sex
+
+** FS might automatically include random intercept for state...look into this
+** Much larger credible intervals
+
+```{r}
+load("/Users/sarahbaum/Dropbox (Personal)/Research/Brazil TB/Rif_Project/output/fits/brm_mod_GS.rda")
+conditional_effect(brm_mod_GS)
+```
+
+
+
+
+# Other: 
+### Posterior checks 
+```{r}
+# Posterior checks and means
+load("/Users/sarahbaum/Dropbox (Personal)/Research/Brazil TB/Rif_Project/output/updates/08-23/plot_prior_and_post.png")
+load("/Users/sarahbaum/Dropbox (Personal)/Research/Brazil TB/Rif_Project/output/updates/08-23/ppc_hist.png")
+
+```
+

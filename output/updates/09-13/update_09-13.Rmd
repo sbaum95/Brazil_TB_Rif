@@ -1,0 +1,647 @@
+---
+title: "Update - September 13"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+editor_options:
+  chunk_output_type: inline
+---
+```{r setup, echo = FALSE, messages = FALSE}
+source(here::here("code/dependencies.R"))
+
+library(mgcv)
+library(gratia)
+library(itsadug)
+library(tidygam)
+
+load(here::here("data/mdf_new_grp.Rdata"))
+load(here::here("data/mdf_new_ind.Rdata"))
+
+
+load(here::here("data/mdf_reentry_ind.Rdata"))
+
+load(here::here("data/mdf_relapse_ind.Rdata"))
+```
+
+
+## New cases
+
+### National time trend model
+
+```{r load new national model, eval = FALSE}
+m0 <- gam(result ~ s(time) + age_cat + s(time, by = age_cat) + hiv_status + s(time, by = hiv_status) + sex + s(time, by = sex),
+          data = mdf_new_ind,
+          family = binomial (link = "logit"),
+          method = "REML"
+)
+
+load(here::here("output/fits/gam_new_m0.rda"))
+```
+
+```{r new national model - show fitted values, echo=FALSE, messages = FALSE, warnings = FALSE}
+model_pred_0 <- fitted_values(m0, scale = "response")
+
+
+ggplot() +
+  # add pct positive by state and quarter
+  geom_point(data = mdf_new_ind %>% 
+               group_by(time, state) %>% 
+               summarize(tested = sum(!is.na(result)),
+                         positive = sum(result == 1, na.rm = TRUE), 
+                         pct = if_else(is.na(sum(result == 1, na.rm = TRUE)/sum(!is.na(result))), 0, sum(result == 1, na.rm = TRUE)/sum(!is.na(result)))), 
+             aes (x = time, y = pct, color = "Observed state-level positivity"), alpha = 0.4) + 
+  # add fitted values for each individual
+  geom_point(data = model_pred_0, aes(time, fitted, color = "Fitted values for individual case"), alpha = 0.4) + 
+  geom_line(data = model_pred_0 %>% 
+               group_by(time) %>% 
+               summarize(fitted = sum(fitted)/n()), aes(time, fitted)) + 
+  # geom_smooth(data = model_pred_0, aes(time, fitted)) + 
+  ylab("Percent of tests RR-TB positive") + 
+  xlab("Quarter") + 
+  ggtitle("National time trend for RR-TB positivity among new cases") + 
+  scale_fill_manual(values = c("Observed state-level positivity", "Fitted values for individual case")) + 
+  labs(colour = "") + 
+  theme_bw()
+  
+```
+\newpage
+
+<!-- ### State-level time trend model (Null model) -->
+```{r load model, echo = FALSE}
+# m1 <- gam(cbind(Positive, Negative) ~ s(state, bs = "re") + s(time, state, bs = "re"), 
+#           data = mdf_new_grp, 
+#           family = binomial (link = "logit"), 
+#           method = "REML"
+#           )
+
+load(here::here("output/fits/gam_new_m1.rda"))
+
+coef(gam_new_m1)
+```
+
+
+```{r get model fits, echo=FALSE, eval = FALSE, messages = FALSE, warnings = FALSE}
+model_pred_1 <- fitted_values(m1, scale = "response") %>% 
+  # add state names
+  right_join(mdf_new_ind %>% select(state, state_nm) %>% unique(), by = "state")
+
+ggplot() +
+  # add pct tested and scale by number tested
+    # geom_point(
+    # data = mdf_new_grp %>%
+    #   group_by(state_nm, time) %>%
+    #   summarize(num_tested = sum(Positive + Negative),
+    #             obs_pct_pos = if_else(is.nan(sum(Positive)/sum(Positive + Negative)), 0, sum(Positive)/sum(Positive + Negative))),
+    # aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.3) + 
+  # add fitted values
+  # geom_point(data = model_pred_1,
+  #            aes(time, fitted, color = "Fitted values for individual case", group = state_nm), alpha = 0.4) + 
+  geom_smooth(data = model_pred_1, 
+              aes(time, fitted, group = state_nm)) + 
+  ylab("Percent of tests RR-TB positive") + 
+  xlab("Quarter") + 
+  ggtitle("State-level time trend - Null model") + 
+  # scale_fill_manual(values = c("Observed state-level positivity", "Fitted values for individual case")) + 
+  # labs(colour = "") + 
+  facet_wrap(~state_nm) + 
+  theme_bw()
+
+```
+
+
+
+
+
+
+\newpage
+### Adjusted state-level random effects model 
+```{r load random effects model, include = FALSE}
+m3a <- gam(result ~ s(state, bs = "re") + s(time, state, bs = "re") + age_cat + hiv_status + sex,
+          data = mdf_new_ind,
+          family = binomial (link = "logit"),
+          method = "REML")
+
+inspect_random(m3a, select = 2)
+
+
+plot(m3a)
+
+m3b <- gam(cbind(Positive,Negative) ~ s(state, bs = "re") + s(time, state, bs = "re"),
+          data = mdf_new_grp,
+          family = binomial (link = "logit"),
+          method = "REML")
+
+inspect_random(m3b, select = 1)
+
+plot(m3b)
+summary(m3b)
+
+
+m3c <- gam(cbind(Positive,Negative) ~ s(state, bs = "re") + s(time) + s(time, by = state),
+          data = mdf_new_grp,
+          family = binomial (link = "logit"),
+          method = "REML")
+
+summary(m3c)
+plot(m3c)
+
+
+m3d <- gam(cbind(Positive,Negative) ~ s(state, bs = "re") + s(time, k = 20) + s(time, by = state, id = 1, k = 20) + age_cat + hiv_status + sex,
+          data = mdf_new_grp,
+          family = binomial (link = "logit"),
+          method = "REML")
+
+summary(m3d)
+appraise(m3d)
+gam.check(m3d)
+plot(m3d)
+
+
+m3e <- gam(cbind(Positive,Negative) ~ s(state, bs = "re") + s(time, k = 20) + s(time, by = state, id = 1, k = 20) + age_cat + hiv_status + sex,
+          data = mdf_new_grp,
+          family = binomial (link = "logit"),
+          method = "REML")
+
+summary(m3e)
+appraise(m3e)
+gam.check(m3e)
+plot(m3e)
+
+
+
+
+load(here::here("output/fits/gam_new_m3a.rda"))
+
+appraise(m3a)
+gam.check(m3a)
+```
+
+```{r new random effects model - get fitted values, echo = FALSE}
+model_pred_3a <- fitted_values(m3a, scale = "response", ) %>% 
+  # mutate(fit = result) %>% 
+    # add state names
+  right_join(mdf_new_ind %>% select(state, state_nm) %>% unique(), by = "state")
+```
+
+```{r new random effects model - show fitted values, fig.height = 6, fig.width = 12, echo = FALSE, messages = FALSE, warnings = FALSE}
+model_pred_3a %>% 
+  ggplot() +
+  # add pct tested and scale by number tested
+    geom_point(
+    data = mdf_new_grp %>%
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(Positive + Negative),
+                obs_pct_pos = if_else(is.nan(sum(Positive)/sum(Positive + Negative)), 0, sum(Positive)/sum(Positive + Negative))),
+    aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.5) +
+  # Add line for observed
+  geom_smooth(data = mdf_new_grp %>%
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(Positive + Negative),
+                obs_pct_pos = if_else(is.nan(sum(Positive)/sum(Positive + Negative)), 0, sum(Positive)/sum(Positive + Negative))),
+    aes(x = time, y = obs_pct_pos, group = state_nm, color = "Observed"), alpha = 0.5, se = FALSE) + 
+  
+ # add fitted values
+  # geom_point(data = model_pred_3a, aes(time, fitted, group = state_nm)) + 
+  geom_line(data = model_pred_3a %>% 
+              group_by(state_nm, time) %>% 
+              summarize(fitted = sum(fitted)/n()), aes(time, fitted, group = state_nm, color = "Fitted - geom_line"), se = FALSE)+
+  geom_smooth(data = model_pred_3a, aes(time, fitted, group = state_nm, color = "Fitted - geom_smooth"), se = FALSE)+
+  xlab("Quarter") + 
+  ylab("Percent positive") + 
+  ggtitle("State-level time trend (Adjusted - Patient age, HIV status, sex)") + 
+  facet_wrap(~state_nm, scales = "free") + 
+  # theme(axis.title = element_text(size = 9), 
+  #       axis.text.x = element_text(size = 9),
+  #       axis.text.y = element_text(size = 9),
+  #       legend.text = element_text(size = 8), 
+  #       legend.title = element_text(size = 8), 
+  #       title = element_text(size = 10),
+  #       legend.key.height = unit(0.5, "cm"),
+  #       legend.key.width = unit(0.3, "cm")
+  # ) + 
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = rel(0.8), 
+                                  margin = margin()),
+        panel.spacing = unit(3, "pt"), 
+        legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 8), 
+        title = element_text(size = 10)) + 
+  scale_size(
+    range = c(0.5, 5)
+  ) +
+  labs(size = "Number of cases tested") +
+  # scale_fill_manual(values = c("Fitted")) + 
+  scale_color_manual(name="Lines",
+                       labels=c("Fitted - geom_smooth", "Fitted - geom_line", "Observed"),
+                       values=c("red", "blue", "black"))
+  
+```
+\newpage
+
+#### Adjusted state-level random effects model (+ health unit)
+
+```{r  new random effects model with health unit, echo = FALSE}
+# m2a <- gam(result ~ s(state, bs = "re") + s(time, state, bs = "re") + age_cat + s(time, by = age_cat) + hiv_status + s(time, by = hiv_status) + sex + s(time, by = sex) + health_unit + s(time, by = health_unit), 
+#            data = mdf_new_ind, 
+#            family = binomial (link = "logit"), 
+#            method = "REML")
+# 
+# save(m2a, file = "output/fits/gam_new_m2a.rda")
+
+load(here::here("output/fits/gam_new_m2a.rda"))
+
+```
+
+
+```{r new full model - get fitted values, echo = FALSE}
+model_pred_2a <- fitted_values(m2a, scale = "response") %>% 
+  # mutate(fit = result) %>% 
+    # add state names
+  right_join(mdf_new_ind %>% select(state, state_nm) %>% unique(), by = "state")
+```
+
+```{r new full model - show fitted values, fig.height = 6, fig.width = 12, echo = FALSE, messages = FALSE, warnings = FALSE}
+model_pred_2a %>% 
+  ggplot() +
+  # add pct tested and scale by number tested
+    geom_point(
+    data = mdf_new_grp %>%
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(Positive + Negative),
+                obs_pct_pos = if_else(is.nan(sum(Positive)/sum(Positive + Negative)), 0, sum(Positive)/sum(Positive + Negative))),
+    aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.5) +
+    # Add line for observed
+  geom_smooth(data = mdf_new_grp %>%
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(Positive + Negative),
+                obs_pct_pos = if_else(is.nan(sum(Positive)/sum(Positive + Negative)), 0, sum(Positive)/sum(Positive + Negative))),
+    aes(x = time, y = obs_pct_pos, group = state_nm, color = "Observed"), alpha = 0.5, se = FALSE) + 
+  
+  # Add fitted values for adjusted model - without health unit
+  geom_smooth(data = model_pred_3a, aes(time, fitted, group = state_nm, color = "Fitted"), se = FALSE)+
+  xlab("Quarter") + 
+  ylab("Percent positive") + 
+  ggtitle("State-level time trend (Adjusted - Patient age, HIV status, sex)") + 
+  facet_wrap(~state_nm, scales = "free") + 
+
+ # add fitted values for adjust model - with health unit 
+  # geom_point(data = model_pred_3a, aes(time, fitted, group = state_nm)) + 
+  geom_smooth(data = model_pred_2a, aes(time, fitted, group = state_nm, color = "Fitted - + health unit"), se = FALSE)+
+  xlab("Quarter") + 
+  ylab("Percent positive") + 
+  ggtitle("State-level time trend (Adjusted - Patient age, HIV status, sex, health unit)") + 
+  facet_wrap(~state_nm) + 
+  # theme(axis.title = element_text(size = 9), 
+  #       axis.text.x = element_text(size = 9),
+  #       axis.text.y = element_text(size = 9),
+  #       legend.text = element_text(size = 8), 
+  #       legend.title = element_text(size = 8), 
+  #       title = element_text(size = 10),
+  #       legend.key.height = unit(0.5, "cm"),
+  #       legend.key.width = unit(0.3, "cm")
+  # ) + 
+  
+  
+# make pretty
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = rel(0.8), 
+                                  margin = margin()),
+        panel.spacing = unit(3, "pt"), 
+        legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 8), 
+        title = element_text(size = 10)) + 
+  scale_size(
+    range = c(0.5, 5)
+  ) +
+  labs(size = "Number of cases tested") + 
+   scale_color_manual(name="Lines",
+                       labels=c("Fitted", "Fitted - + health unit", "Observed"),
+                       values=c("red", "blue", "black"))
+
+```
+
+
+
+\newpage
+
+
+## Re-Entry Cases
+
+#### National time trend model 
+
+```{r reentry - national time trend, echo = FALSE}
+# m0_reentry <- gam(result ~ s(time) + age_cat + s(time, by = age_cat) + hiv_status + s(time, by = hiv_status) + sex + s(time, by = sex),
+#           data = mdf_reentry_ind,
+#           family = binomial (link = "logit"),
+#           method = "REML")
+# 
+# save(m0_reentry, file = "output/fits/gam_reentry_m0.rda")
+load(here::here("output/fits/gam_reentry_m0.rda"))
+# gam.check(m0_reentry)
+```
+
+```{r reentry - national time trend - get fitted values and plot}
+model_pred_0_reentry <- fitted_values(m0_reentry, scale = "response")
+
+
+ggplot() +
+  # add pct positive by state and quarter
+  geom_point(data = mdf_reentry_ind %>% 
+               group_by(time, state) %>% 
+               summarize(tested = sum(!is.na(result)),
+                         positive = sum(result == 1, na.rm = TRUE), 
+                         pct = if_else(is.na(sum(result == 1, na.rm = TRUE)/sum(!is.na(result))), 0, sum(result == 1, na.rm = TRUE)/sum(!is.na(result)))), 
+             aes (x = time, y = pct, fill = "Observed state-level positivity"), alpha = 0.4) + 
+  # add line for observed
+   geom_smooth(data = mdf_reentry_ind %>% 
+               group_by(time, state) %>% 
+               summarize(tested = sum(!is.na(result)),
+                         positive = sum(result == 1, na.rm = TRUE), 
+                         pct = if_else(is.na(sum(result == 1, na.rm = TRUE)/sum(!is.na(result))), 0, sum(result == 1, na.rm = TRUE)/sum(!is.na(result)))), 
+             aes (x = time, y = pct, color = "Observed"), alpha = 0.4, se = FALSE) + 
+  
+  # add fitted values for each individual
+  # geom_point(data = model_pred_0_reentry, aes(time, fitted, color = "Fitted values for individual case"), alpha = 0.4) + 
+  geom_smooth(data = model_pred_0_reentry, aes(time, fitted, color = "Fitted"), se = FALSE) + 
+  # geom_smooth(data = model_pred_0_reentry, aes(time, fitted, color = "Fitted"), se = FALSE) + 
+  ylab("Percent of tests RR-TB positive") + 
+  xlab("Quarter") + 
+  ggtitle("National time trend for RR-TB positivity among reentry cases") + 
+  scale_color_manual(labels = c("Observed", "Fitted"), 
+                    values = c("black",  "red")) + 
+  labs(color = "", fill = "") + 
+  theme_bw()
+
+```
+
+
+
+\newpage
+
+#### State-level time trend model (Adjusted - Age, HIV status, Sex)
+```{r reentry random effects model - run model}
+# m3a_reentry <- gam(result ~ s(state, bs = "re") + s(time, state, bs = "re") + age_cat + s(time, by = age_cat) + hiv_status + s(time, by = hiv_status) + sex + s(time, by = sex), 
+#           data = mdf_reentry_ind, 
+#           family = binomial (link = "logit"), 
+#           method = "REML")
+
+# save(m3a_reentry, file = "output/fits/gam_reentry_m3a.rda")
+load(here::here("output/fits/gam_reentry_m3a.rda"))
+```
+
+```{r reentry random effects model - get fitted values, echo = FALSE}
+model_pred_3a_reentry <- fitted_values(m3a_reentry, scale = "response") %>% 
+  # mutate(fit = result) %>% 
+    # add state names
+  right_join(mdf_reentry_ind %>% select(state, state_nm) %>% unique(), by = "state")
+```
+
+
+```{r reentry random effects model - show fitted values, echo = FALSE, fig.height = 6, fig.width = 12}
+model_pred_3a_reentry %>% 
+  ggplot() +
+  # add pct tested and scale by number tested
+  geom_point(
+    data = mdf_reentry_ind %>%
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(!is.na(result)),
+                positive = sum(result == "1", na.rm = TRUE),
+                obs_pct_pos = if_else(is.na(sum(result == "1", na.rm = TRUE)/num_tested), 0, sum(result == "1", na.rm = TRUE)/num_tested)),
+    aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.3) +
+  
+  # add line 
+  geom_smooth(
+    data = mdf_reentry_ind %>%
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(!is.na(result)),
+                positive = sum(result == "1", na.rm = TRUE),
+                obs_pct_pos = if_else(is.na(sum(result == "1", na.rm = TRUE)/num_tested), 0, sum(result == "1", na.rm = TRUE)/num_tested)),
+    aes(x = time, y = obs_pct_pos, group = state_nm, color = "Observed"), alpha = 0.3, se = FALSE) + 
+  
+ # add fitted values
+  # geom_point(data = model_pred_3a, aes(time, fitted, group = state_nm)) + 
+  geom_smooth(data = model_pred_3a_reentry, aes(time, fitted, group = state_nm, color = "Fitted"), se = FALSE)+
+  xlab("Quarter") + 
+  ylab("Percent positive") + 
+  ggtitle("State-level time trend for re-entry cases (Adjusted - Patient age, HIV status, sex)") + 
+  facet_wrap(~state_nm, scales = "free") + 
+  # theme(axis.title = element_text(size = 9), 
+  #       axis.text.x = element_text(size = 9),
+  #       axis.text.y = element_text(size = 9),
+  #       legend.text = element_text(size = 8), 
+  #       legend.title = element_text(size = 8), 
+  #       title = element_text(size = 10),
+  #       legend.key.height = unit(0.5, "cm"),
+  #       legend.key.width = unit(0.3, "cm")
+  # ) + 
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = rel(0.8), 
+                                  margin = margin()),
+        panel.spacing = unit(3, "pt"), 
+        legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 8), 
+        title = element_text(size = 10)) + 
+  scale_size(
+    range = c(0.5, 5)
+  ) +
+  labs(size = "Number of cases tested") + 
+   scale_color_manual(name="Lines",
+                       labels=c("Fitted", "Observed"),
+                       values=c("red","black"))
+```
+
+
+
+\newpage
+
+## Relapse Cases
+
+#### National time trend model (Null)
+Note: This fits simpler model for time trend since I was getting overspecification errors
+<!-- Produces error "Error in gam.fit3(x = X, y = y, sp = L %*% lsp3 + lsp0, Eb = Eb, UrS = UrS,  : inner loop 3; can't correct step size", which seems like a convergence due to overspecification.  -->
+```{r relapse - national time trend, echo = FALSE, eval = FALSE}
+# m0_relapse <- gam(result ~ s(time) + age_cat + s(time, by = age_cat) + hiv_status + s(time, by = hiv_status) + sex + s(time, by = sex),
+#           data = mdf_relapse_ind,
+#           family = binomial (link = "logit"),
+#           method = "REML")
+# 
+# save(m0_relapse, "output/fits/gam_relapse_m0.rda")
+
+# Fit simpler model for 
+m0_relapse <- gam(result ~ s(state, bs = "re") + s(time, state, bs = "re"),
+          data = mdf_relapse_ind,
+          family = binomial (link = "logit"),
+          method = "REML")
+```
+
+```{r relapse - national time trend - get fitted values and plot, echo = FALSE, messages = FALSE, eval = FALSE}
+model_pred_0_relapse <- fitted_values(m0_relapse, scale = "response")
+
+
+ggplot() +
+  # add pct positive by state and quarter
+  geom_point(data = mdf_relapse_ind %>% 
+               group_by(time, state) %>% 
+               summarize(tested = sum(!is.na(result)),
+                         positive = sum(result == 1, na.rm = TRUE), 
+                         pct = if_else(is.na(sum(result == 1, na.rm = TRUE)/sum(!is.na(result))), 0, sum(result == 1, na.rm = TRUE)/sum(!is.na(result)))), 
+             aes (x = time, y = pct, fill = "Observed state-level positivity"), alpha = 0.4) + 
+  # add line for observed
+    geom_smooth(data = mdf_relapse_ind %>% 
+               group_by(time, state) %>% 
+               summarize(tested = sum(!is.na(result)),
+                         positive = sum(result == 1, na.rm = TRUE), 
+                         pct = if_else(is.na(sum(result == 1, na.rm = TRUE)/sum(!is.na(result))), 0, sum(result == 1, na.rm = TRUE)/sum(!is.na(result)))), 
+             aes (x = time, y = pct, color = "Observed"), alpha = 0.4, se = FALSE) + 
+  
+  
+  # add fitted values for each individual
+  geom_point(data = model_pred_0_relapse, aes(time, fitted), alpha = 0.4, se = FALSE) + 
+  geom_smooth(data = model_pred_0_relapse, aes(time, fitted, color = "Fitted"), se = FALSE) + 
+  ylab("Percent of tests RR-TB positive") + 
+  xlab("Quarter") + 
+  ggtitle("National time trend for RR-TB positivity among relapse cases (Null model)") + 
+  scale_color_manual(labels = c("Observed", "Fitted"), 
+                    values = c("black",  "red")) + 
+  labs(color = "", fill = "") + 
+  theme_bw()
+```
+
+
+
+\newpage
+#### State-level time trend model (Null model)
+
+Running because throwing errors for other models
+```{r relapse random effects null model - run model, echo = FALSE}
+# m4_relapse <- gam(result ~ s(state, bs = "re") + s(time, state, bs = "re"), 
+#           data = mdf_relapse_ind, 
+#           family = binomial (link = "logit"), 
+#           method = "REML")
+# 
+# save(m4_relapse, file = "output/fits/gam_relapse_m4.rda")
+load(here::here("output/fits/gam_relapse_m4.rda"))
+```
+
+```{r relapse random effects null model - get fitted values, echo = FALSE}
+model_pred_4_relapse <- fitted_values(m4_relapse, scale = "response") %>% 
+  # mutate(fit = result) %>% 
+    # add state names
+  right_join(mdf_relapse_ind %>% select(state, state_nm) %>% unique(), by = "state")
+```
+
+
+```{r relapse random effects null model - show fitted values, echo = FALSE, fig.height = 6, fig.width = 12}
+model_pred_4_relapse  %>% 
+  ggplot() +
+  # add pct tested and scale by number tested
+  geom_point(
+    data = mdf_relapse_ind %>%
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(!is.na(result)),
+                positive = sum(result == "1", na.rm = TRUE),
+                obs_pct_pos = if_else(is.na(sum(result == "1", na.rm = TRUE)/num_tested), 0, sum(result == "1", na.rm = TRUE)/num_tested)),
+    aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.3) +
+  
+  
+  # add line for observed
+    geom_smooth(
+    data = mdf_relapse_ind %>%
+      group_by(state_nm, time) %>%
+      summarize(num_tested = sum(!is.na(result)),
+                positive = sum(result == "1", na.rm = TRUE),
+                obs_pct_pos = if_else(is.na(sum(result == "1", na.rm = TRUE)/num_tested), 0, sum(result == "1", na.rm = TRUE)/num_tested)),
+    aes(x = time, y = obs_pct_pos, group = state_nm, color = "Observed"), alpha = 0.3, se = FALSE) +
+  
+  
+ # add fitted values
+  geom_smooth(data = model_pred_4_relapse, aes(time, fitted, group = state_nm, color = "Fitted"), se = FALSE)+
+  xlab("Quarter") + 
+  ylab("Percent positive") + 
+  ggtitle("State-level time trend for relapse cases (Null)") + 
+  facet_wrap(~state_nm, scales = "free") + 
+  # theme(axis.title = element_text(size = 9), 
+  #       axis.text.x = element_text(size = 9),
+  #       axis.text.y = element_text(size = 9),
+  #       legend.text = element_text(size = 8), 
+  #       legend.title = element_text(size = 8), 
+  #       title = element_text(size = 10),
+  #       legend.key.height = unit(0.5, "cm"),
+  #       legend.key.width = unit(0.3, "cm")
+  # ) + 
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = rel(0.8), 
+                                  margin = margin()),
+        panel.spacing = unit(3, "pt"), 
+        legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 8), 
+        title = element_text(size = 10)) + 
+  scale_size(
+    range = c(0.5, 5)
+  ) +
+  labs(size = "Number of cases tested") + 
+   scale_color_manual(name="Lines",
+                       labels=c("Fitted", "Observed"),
+                       values=c("red","black"))
+
+```
+
+
+<!-- #### State-level time trend model (Adjusted) -->
+<!-- ```{r relapse random effects model - run model, eval = FALSE} -->
+<!-- m3a_relapse <- gam(result ~ s(state, bs = "re") + s(time, state, bs = "re") + age_cat + s(time, by = age_cat) + hiv_status + s(time, by = hiv_status) + sex + s(time, by = sex),  -->
+<!--           data = mdf_relapse_ind,  -->
+<!--           family = binomial (link = "logit"),  -->
+<!--           method = "REML") -->
+
+<!-- save(m3a_relapse, "output/fits/gam_relapse_m3a.rda") -->
+<!-- ``` -->
+
+<!-- ```{r relapse random effects model - get fitted values, echo = FALSE} -->
+<!-- model_pred_3a_relapse <- fitted_values(m3a_relapse, scale = "response") %>%  -->
+<!--     # add state names -->
+<!--   right_join(mdf_relapse_ind %>% select(state, state_nm) %>% unique(), by = "state") -->
+<!-- ``` -->
+
+
+<!-- ```{r relapse random effects model - show fitted values, fig.height = 6, fig.width = 12} -->
+<!-- model_pred_3a_relapse %>%  -->
+<!--   ggplot() + -->
+<!--   # add pct tested and scale by number tested -->
+<!--     geom_point( -->
+<!--     data = mdf_relapse_grp %>% -->
+<!--       group_by(state_nm, time) %>% -->
+<!--       summarize(num_tested = sum(Positive + Negative), -->
+<!--                 obs_pct_pos = if_else(is.nan(sum(Positive)/sum(Positive + Negative)), 0, sum(Positive)/sum(Positive + Negative))), -->
+<!--     aes(x = time, y = obs_pct_pos, group = state_nm, size = num_tested), alpha = 0.5) + -->
+
+<!--  # add fitted values -->
+<!--   # geom_point(data = model_pred_3a, aes(time, fitted, group = state_nm)) +  -->
+<!--   geom_smooth(data = model_pred_3a_relapse, aes(time, fitted, group = state_nm, color = "red"))+ -->
+<!--   xlab("Quarter") +  -->
+<!--   ylab("Percent positive") +  -->
+<!--   ggtitle("State-level time trend for relapsed cases (Adjusted - Patient age, HIV status, sex)") +  -->
+<!--   facet_wrap(~state_nm, scales = "free") +  -->
+<!--   # theme(axis.title = element_text(size = 9),  -->
+<!--   #       axis.text.x = element_text(size = 9), -->
+<!--   #       axis.text.y = element_text(size = 9), -->
+<!--   #       legend.text = element_text(size = 8),  -->
+<!--   #       legend.title = element_text(size = 8),  -->
+<!--   #       title = element_text(size = 10), -->
+<!--   #       legend.key.height = unit(0.5, "cm"), -->
+<!--   #       legend.key.width = unit(0.3, "cm") -->
+<!--   # ) +  -->
+<!--   theme(strip.background = element_blank(), -->
+<!--         strip.text = element_text(size = rel(0.8),  -->
+<!--                                   margin = margin()), -->
+<!--         panel.spacing = unit(3, "pt"),  -->
+<!--         legend.title = element_text(size = 8),  -->
+<!--         legend.text = element_text(size = 8),  -->
+<!--         title = element_text(size = 10)) +  -->
+<!--   scale_size( -->
+<!--     range = c(0.5, 5) -->
+<!--   ) + -->
+<!--   labs(color = "", size = "Number of cases tested")  -->
+<!-- ``` -->
