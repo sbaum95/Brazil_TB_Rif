@@ -38,12 +38,12 @@ df <- sinan_xpert %>%
     # define Xpert test status
     tested = if_else(test_molec %in% c("1", "2", "3", "4"), 1, 0),
     
-    # define RR-TB status
+    # define RR-TB status - Confirm: Should be res = 2, sens = 1 (should not include )
     result = if_else(test_molec %in% c("2"), 1, 
                      if_else(test_molec %in% c("1", "3", "4"), 0, NA)) %>% as.factor()
   ) %>% 
   filter(diag_qrt < "2020-01-01") %>% 
-  select(state, state_nm, id_municip, id_micro, diag_qrt, age, age_cat, sex, tratamento, hiv_status, result, health_unit, 
+  dplyr::select(state, state_nm, id_municip, id_micro, diag_qrt, diag_yr, tested, result, age, age_cat, sex, tratamento, hiv_status, health_unit, 
          mun_urban_cat, mun_has_prison, mun_bf_cat, mun_fhs_cat, 
          mic_urban_cat, mic_has_prison, mic_bf_cat, mic_fhs_cat) %>% 
   filter(!is.na(state))

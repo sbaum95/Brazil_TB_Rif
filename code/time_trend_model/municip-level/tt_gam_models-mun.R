@@ -92,7 +92,7 @@ plot(mun_new_mod2)
 # Combines patient who are identified as relapsed and re-treatment
 load(here::here("data/mdf_prev_ind.Rdata"))
 
-mdf_prev_ind <- mdf_prev_ind %>% filter(!age_cat == "0-4")
+# mdf_prev_ind <- mdf_prev_ind %>% 
 # filter out 0-4 year olds from model 
 
 
@@ -102,7 +102,7 @@ mdf_prev_ind <- mdf_prev_ind %>% filter(!age_cat == "0-4")
 ##                     Model 1 - 2014-2019                     ##
 #################################################################
 mun_prev_mod1a  <- gam(result ~ s(state, bs = "re") + s(time, k = 23) + s(time, by = state, id = 1, k = 23) + age_cat + hiv_status + sex + health_unit + tratamento + mun_has_prison + mun_urban_cat + mun_bf_cat + mun_fhs_cat,
-                      data = mdf_prev_ind,
+                      data = mdf_prev_ind %>% filter(!age_cat == "0-4"),
                       family = binomial (link = "logit"),
                       method = "REML")
 
@@ -121,7 +121,7 @@ plot(mun_prev_mod1a)
 ##                     Model 2 - 2016-2019                     ##
 #################################################################
 mun_prev_mod2a <- gam(result~ s(state, bs = "re") + s(time, k = 15) + s(time, by = state, id = 1, k = 15) + hiv_status + age_cat + sex + health_unit + tratamento + mun_has_prison + mun_urban_cat + mun_bf_cat + mun_fhs_cat,
-                                 data = mdf_prev_ind %>% filter(time > 8),
+                                 data = mdf_prev_ind %>% filter(time > 8) %>% filter(!age_cat == "0-4"),
                                  family = binomial (link = "logit"),
                                  method = "REML")
 
