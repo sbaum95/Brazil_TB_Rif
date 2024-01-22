@@ -11,7 +11,7 @@ source(here::here("code/dependencies.R"))
 
 ## Load data
 load(here::here("data/mdf_mun_new_grp.Rdata"))
-load(here::here("data/mdf_mic_new_grp.Rdata"))
+# load(here::here("data/mdf_mic_new_grp.Rdata"))
 load("data/mdf_prev_ind.Rdata")
 
 
@@ -24,9 +24,11 @@ load("data/mdf_prev_ind.Rdata")
 
 load("output/fits/mun_new_mod1a.Rda")
 load("output/fits/mun_new_mod2a.Rda")
+load("output/fits/mun_new_mod2b.Rda") # created with updated definitions of results (excluding inconclusive)
 
 load("output/fits/mun_prev_mod1a.Rda")
 load("output/fits/mun_prev_mod2a.Rda")
+load("output/fits/mun_prev_mod2b.Rda") # created with updated definitions of results (excluding inconclusive)
 
 
 
@@ -63,33 +65,33 @@ get_preds <- function(fit_object, data){
   
   ## 5a - state (quarter)
 # 
-#   pred.int_state <- output %>%
-#     group_by(state, time) %>%
-#     summarize(mean = mean(c_across(starts_with("X")), na.rm = TRUE),
-#               lci = quantile(c_across(starts_with("X")), c(0.025)),
-#               hci = quantile(c_across(starts_with("X")), c(0.975))) %>%
-#     mutate(mean = plogis(mean),
-#            lci = plogis(lci),
-#            hci = plogis(hci))
-#   
   pred.int_state <- output %>%
     group_by(state, time) %>%
-    summarize(mean_log = mean(c_across(starts_with("X")), na.rm = TRUE),
-              lci_log = quantile(c_across(starts_with("X")), c(0.025), na.rm = TRUE),
-              hci_log = quantile(c_across(starts_with("X")), c(0.975), na.rm = TRUE)) %>%
-    mutate(mean = plogis(mean_log),
-           lci = plogis(lci_log),
-           hci = plogis(hci_log))
+    summarize(mean = mean(c_across(starts_with("X"))),
+              lci = quantile(c_across(starts_with("X")), c(0.025)),
+              hci = quantile(c_across(starts_with("X")), c(0.975))) %>%
+    mutate(mean = plogis(mean),
+           lci = plogis(lci),
+           hci = plogis(hci))
+#   
+  # pred.int_state <- output %>%
+  #   group_by(state, time) %>%
+  #   summarize(mean_log = mean(c_across(starts_with("X")), na.rm = TRUE),
+  #             lci_log = quantile(c_across(starts_with("X")), c(0.025), na.rm = TRUE),
+  #             hci_log = quantile(c_across(starts_with("X")), c(0.975), na.rm = TRUE)) %>%
+  #   mutate(mean = plogis(mean_log),
+  #          lci = plogis(lci_log),
+  #          hci = plogis(hci_log))
   
   ## 5b - state (year)
   pred.int_state_year <- output %>%
-    mutate(year = case_when(time <= 4 ~ 2014, 
-                            time > 4 & time <= 8 ~ 2015, 
-                            time > 8 & time <= 12 ~ 2016, 
-                            time > 12 & time <= 16 ~ 2017, 
-                            time > 16 & time <= 20 ~ 2018, 
-                            time > 20 & time <= 24 ~ 2019)) %>% 
-    group_by(state, year) %>% 
+    mutate(year = case_when(time <= 4 ~ 2014,
+                            time > 4 & time <= 8 ~ 2015,
+                            time > 8 & time <= 12 ~ 2016,
+                            time > 12 & time <= 16 ~ 2017,
+                            time > 16 & time <= 20 ~ 2018,
+                            time > 20 & time <= 24 ~ 2019)) %>%
+    group_by(state, year) %>%
     summarize(mean_log = mean(c_across(starts_with("X")), na.rm = TRUE),
               lci_log = quantile(c_across(starts_with("X")), c(0.025), na.rm = TRUE),
               hci_log = quantile(c_across(starts_with("X")), c(0.975), na.rm = TRUE)) %>%
@@ -107,26 +109,49 @@ get_preds <- function(fit_object, data){
            lci = plogis(lci_log),
            hci = plogis(hci_log))
   
-  return(list(pred.int_state = pred.int_state, pred.int_nat = pred.int_nat, pred.int_state_year = pred.int_state_year))
+  
+  ## 5d - national (year)
+  pred.int_nat <- output %>%
+    mutate(year = case_when(time <= 4 ~ 2014,
+                            time > 4 & time <= 8 ~ 2015,
+                            time > 8 & time <= 12 ~ 2016,
+                            time > 12 & time <= 16 ~ 2017,
+                            time > 16 & time <= 20 ~ 2018,
+                            time > 20 & time <= 24 ~ 2019)) %>%
+    group_by(year) %>%
+    summarize(mean_log = mean(c_across(starts_with("X")), na.rm = TRUE),
+              lci_log = quantile(c_across(starts_with("X")), c(0.025), na.rm = TRUE),
+              hci_log = quantile(c_across(starts_with("X")), c(0.975), na.rm = TRUE)) %>%
+    mutate(mean = plogis(mean_log),
+           lci = plogis(lci_log),
+           hci = plogis(hci_log))
+  
+  
+  ## 5e - municipality (2016, 2019)
+  # pred.int_mun <- output %>%
+  #   filter(time > 8 & time <= 12 | time > 20) %>% 
+  #   mutate(year = case_when(
+  #     # time <= 4 ~ 2014, 
+  #     #                       time > 4 & time <= 8 ~ 2015, 
+  #                           time > 8 & time <= 12 ~ 2016, 
+  #                           # time > 12 & time <= 16 ~ 2017, 
+  #                           # time > 16 & time <= 20 ~ 2018, 
+  #                           time > 20 & time <= 24 ~ 2019)) %>% 
+  #   group_by(id_municip, year) %>% 
+  #   summarize(mean_log = mean(c_across(starts_with("X")), na.rm = TRUE),
+  #             lci_log = quantile(c_across(starts_with("X")), c(0.025), na.rm = TRUE),
+  #             hci_log = quantile(c_across(starts_with("X")), c(0.975), na.rm = TRUE)) %>%
+  #   mutate(mean = plogis(mean_log),
+  #          lci = plogis(lci_log),
+  #          hci = plogis(hci_log))
+  
+  return(list(pred.int_state = pred.int_state, 
+              pred.int_nat = pred.int_nat, 
+              pred.int_state_year = pred.int_state_year
+              # pred.int_mun = pred.int_mun
+              ))
   
 }
-
-
-pred.int_state_year <- output %>%
-  mutate(year = case_when(time <= 4 ~ 2014, 
-                          time > 4 & time <= 8 ~ 2015, 
-                          time > 8 & time <= 12 ~ 2016, 
-                          time > 12 & time <= 16 ~ 2017, 
-                          time > 16 & time <= 20 ~ 2018, 
-                          time > 20 & time <= 24 ~ 2019)) %>% 
-  group_by(state, year) %>% 
-  summarize(mean_log = mean(c_across(starts_with("X")), na.rm = TRUE),
-            lci_log = quantile(c_across(starts_with("X")), c(0.025), na.rm = TRUE),
-            hci_log = quantile(c_across(starts_with("X")), c(0.975), na.rm = TRUE)) %>%
-  mutate(mean = plogis(mean_log),
-         lci = plogis(lci_log),
-         hci = plogis(hci_log))
-
 
 
 
