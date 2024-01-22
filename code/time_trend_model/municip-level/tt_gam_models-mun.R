@@ -30,14 +30,14 @@ load(here::here("data/mdf_new_ind.Rdata"))
 ##                     Model 1 - 2014-2019                     ##
 #################################################################
 
-mun_new_mod1a <- gam(cbind(Positive,Negative) ~ s(state, bs = "re") + s(time, k = 23) + s(time, by = state, id = 1, k = 23) + age_cat + hiv_status + sex + health_unit + mun_has_prison + mun_urban_cat + mun_bf_cat + mun_fhs_cat,
+mun_new_mod1b <- gam(cbind(Positive,Negative) ~ s(state, bs = "re") + s(time, k = 23) + s(time, by = state, id = 1, k = 23) + age_cat + hiv_status + sex + health_unit + mun_has_prison + mun_urban_cat + mun_bf_cat + mun_fhs_cat,
                     data = mdf_mun_new_grp,
                     family = binomial (link = "logit"),
                     method = "REML")
 
 
 
-save(mun_new_mod1a, file = "output/fits/mun_new_mod1a.rda")
+save(mun_new_mod1b, file = "output/fits/mun_new_mod1b.rda")
 
 summary(mun_new_mod1)
 appraise(mun_new_mod1)
@@ -48,14 +48,14 @@ plot(mun_new_mod1)
 #################################################################
 ##                     Model 2 - 2016-2019                     ##
 #################################################################
-mun_new_mod2a <- gam(cbind(Positive,Negative) ~ s(state, bs = "re") + s(time, k = 15) + s(time, by = state, id = 1, k = 15) + age_cat + hiv_status + sex + health_unit + mun_has_prison + mun_urban_cat + mun_bf_cat + mun_fhs_cat,
+mun_new_mod2b <- gam(cbind(Positive,Negative) ~ s(state, bs = "re") + s(time, k = 15) + s(time, by = state, id = 1, k = 15) + age_cat + hiv_status + sex + health_unit + mun_has_prison + mun_urban_cat + mun_bf_cat + mun_fhs_cat,
                 data = mdf_mun_new_grp %>% filter(time > 8),
                 family = binomial (link = "logit"),
                 method = "REML")
 
 
 
-save(mun_new_mod2a, file = "output/fits/mun_new_mod2a.rda")
+save(mun_new_mod2b, file = "output/fits/mun_new_mod2b.rda")
 
 summary(mun_new_mod2)
 appraise(mun_new_mod2)
