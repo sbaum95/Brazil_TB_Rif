@@ -111,7 +111,7 @@ get_preds <- function(fit_object, data){
   
   
   ## 5d - national (year)
-  pred.int_nat <- output %>%
+  pred.int_nat_year <- output %>%
     mutate(year = case_when(time <= 4 ~ 2014,
                             time > 4 & time <= 8 ~ 2015,
                             time > 8 & time <= 12 ~ 2016,
@@ -147,6 +147,7 @@ get_preds <- function(fit_object, data){
   
   return(list(pred.int_state = pred.int_state, 
               pred.int_nat = pred.int_nat, 
+              pred.int_nat_year = pred.int_nat_year,
               pred.int_state_year = pred.int_state_year
               # pred.int_mun = pred.int_mun
               ))
@@ -202,7 +203,7 @@ get_preds <- function(fit_object, data){
 #################################################################
 ##              Municipality: Model 1 (2014-2019)              ##
 #################################################################
-boot.mun_new_1 <- get_preds(fit_object = mun_new_mod1a, data = mdf_mun_new_grp %>% 
+boot.mun_new_1 <- get_preds(fit_object = mun_new_mod1, data = mdf_mun_new_grp %>% 
                               filter_at(vars(state, time, Positive, Negative, sex, hiv_status,
                                              age_cat, health_unit, mun_urban_cat,
                                              mun_fhs_cat, mun_has_prison, mun_bf_cat),
@@ -225,7 +226,7 @@ save("boot.mun_new_1", file = "output/fits/boot.mun_new_1.Rda")
 #################################################################
 ##              Municipality: Model 2 (2016-2019)              ##
 #################################################################
-boot.mun_new_2 <- get_preds(fit_object = mun_new_mod2a, data = mdf_mun_new_grp %>% 
+boot.mun_new_2 <- get_preds(fit_object = mun_new_mod2, data = mdf_mun_new_grp %>% 
                               filter(time > 8) %>% 
                               filter_at(vars(state, time, Positive, Negative, sex, hiv_status,
                                             age_cat, health_unit, mun_urban_cat,
@@ -302,7 +303,7 @@ save("boot.mun_new_2", file = "output/fits/boot.mun_new_2.Rda")
 #################################################################
 ##              Municipality: Model 1 (2014-2019)              ##
 #################################################################
-boot.mun_prev_1 <- get_preds(fit_object = mun_prev_mod1a, data = mdf_prev_ind %>% 
+boot.mun_prev_1 <- get_preds(fit_object = mun_prev_mod1, data = mdf_prev_ind %>% 
                                filter(!age_cat == "0-4") %>%
                                filter_at(vars(state, time, result, tratamento, sex, hiv_status,
                                               age_cat, health_unit, mun_urban_cat,
@@ -326,8 +327,8 @@ save("boot.mun_prev_1", file = "output/fits/boot.mun_prev_1.Rda")
 #################################################################
 ##              Municipality: Model 2 (2016-2019)              ##
 #################################################################
-boot.mun_prev_2 <- get_preds(fit_object = mun_prev_mod2a, data = mdf_prev_ind %>%
-                               # filter(!age_cat == "0-4") %>%
+boot.mun_prev_2 <- get_preds(fit_object = mun_prev_mod2, data = mdf_prev_ind %>%
+                               filter(!age_cat == "0-4") %>%
                                filter(time > 8) %>%
                                filter_at(vars(state, time, result, tratamento, sex, hiv_status,
                                               age_cat, health_unit, mun_urban_cat,
