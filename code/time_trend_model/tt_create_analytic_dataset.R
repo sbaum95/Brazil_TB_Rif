@@ -100,7 +100,7 @@ save(mdf_prev_ind, file = "data/mdf_prev_ind.Rdata")
 
 # create group-level datasets (hiv, sex, age_cat) ---------------------------------
 ## new cases 
-# load("data/mdf_new_ind.Rdata")
+load("data/mdf_new_ind.Rdata")
 
 mdf_mun_new_grp <- mdf_new_ind %>% 
   # filter(!is.na(hiv_status) & !is.na(age) &  !is.na(sex) & !is.na(state) & !is.na(age_cat)) %>%
@@ -130,32 +130,32 @@ save(mdf_mun_new_grp, file = "data/mdf_mun_new_grp.Rdata")
 
 
 
-# # create groups at the micro-region level
-# mdf_mic_new_grp <- mdf_new_ind %>% 
-#   # filter(!is.na(hiv_status) & !is.na(age) &  !is.na(sex) & !is.na(state) & !is.na(age_cat)) %>%
-#   select(-c(diag_qrt, age, tratamento)) %>% 
-#   group_by(state, state_nm, id_micro, time, age_cat, sex, hiv_status, result, health_unit, 
-#            mic_urban_cat, mic_has_prison, mic_bf_cat, mic_fhs_cat) %>% 
-#   count() %>% 
-#   pivot_wider(names_from = "result", values_from = "n") %>%
-#   rename(neg = "0",
-#          pos = "1",
-#          miss = `NA`) %>%
-#   mutate(Negative = if_else(is.na(neg), 0, neg),
-#          Positive = if_else(is.na(pos), 0, pos),
-#          Miss = if_else(is.na(miss), 0, miss)) %>% 
-#   mutate(cases = Negative + Positive + Miss, 
-#          pct_tested = (Negative + Positive)/(Negative + Positive + Miss), 
-#          obs_pct_positive = if_else(is.nan(Positive/(Negative + Positive)), 0, Positive/(Negative + Positive))
-#   ) %>% 
-#   select(-c(miss, neg, pos))
-# 
-# # cross-check number of cases 
-# mdf_mic_new_grp %>% ungroup() %>% summarize(sum(cases)) 
-# 
-# # save df 
-# save(mdf_mic_new_grp, file = "data/mdf_mic_new_grp.Rdata")
-# 
+# create groups at the micro-region level
+mdf_mic_new_grp <- mdf_new_ind %>%
+  # filter(!is.na(hiv_status) & !is.na(age) &  !is.na(sex) & !is.na(state) & !is.na(age_cat)) %>%
+  select(-c(diag_qrt, age, tratamento)) %>%
+  group_by(state, state_nm, id_micro, time, age_cat, sex, hiv_status, result, health_unit,
+           mic_urban_cat, mic_has_prison, mic_bf_cat, mic_fhs_cat) %>%
+  count() %>%
+  pivot_wider(names_from = "result", values_from = "n") %>%
+  rename(neg = "0",
+         pos = "1",
+         miss = `NA`) %>%
+  mutate(Negative = if_else(is.na(neg), 0, neg),
+         Positive = if_else(is.na(pos), 0, pos),
+         Miss = if_else(is.na(miss), 0, miss)) %>%
+  mutate(cases = Negative + Positive + Miss,
+         pct_tested = (Negative + Positive)/(Negative + Positive + Miss),
+         obs_pct_positive = if_else(is.nan(Positive/(Negative + Positive)), 0, Positive/(Negative + Positive))
+  ) %>%
+  select(-c(miss, neg, pos))
+
+# cross-check number of cases
+mdf_mic_new_grp %>% ungroup() %>% summarize(sum(cases))
+
+# save df
+save(mdf_mic_new_grp, file = "data/mdf_mic_new_grp.Rdata")
+
 
 
 
