@@ -17,10 +17,10 @@ load("data/mdf_prev_ind.Rdata")
 
 ## Load models 
 # load("output/fits/mic_new_mod1a.Rda")
-# load("output/fits/mic_new_mod2a.Rda")
+load("output/fits/mic_new_mod2.Rda")
 # 
 # load("output/fits/mic_prev_mod1a.Rda")
-# load("output/fits/mic_prev_mod2a.Rda")
+load("output/fits/mic_prev_mod2.Rda")
 
 load("output/fits/mun_new_mod1a.Rda")
 load("output/fits/mun_new_mod2a.Rda")
@@ -184,18 +184,18 @@ get_preds <- function(fit_object, data){
 #################################################################
 ##              Micro-region: Model 2 (2016-2019)              ##
 #################################################################
-# boot.mic_new_2 <- get_preds(fit_object = mic_new_mod2a, data = mdf_mic_new_grp %>% 
-#                               filter(time > 8) %>% 
-#                               filter_at(vars(state, time, Positive, Negative, sex, hiv_status,
-#                                          age_cat, health_unit, mic_urban_cat,
-#                                          mic_fhs_cat, mic_has_prison, mic_bf_cat),
-#                                     all_vars(!is.na(.))))
-# 
-# boot.mic_new_2[["pred.int_state"]] <- boot.mic_new_2[["pred.int_state"]]  %>% 
-#   merge(mdf_mic_new_grp %>% ungroup() %>% dplyr::select(state_nm, state) %>% unique(), by = "state")
-# 
-# 
-# save("boot.mic_new_2", file = "output/fits/boot.mic_new_2.Rda")
+boot.mic_new_2 <- get_preds(fit_object = mic_new_mod2, data = mdf_mic_new_grp %>%
+                              filter(time > 8) %>%
+                              filter_at(vars(state, time, Positive, Negative, sex, hiv_status,
+                                         age_cat, health_unit, mic_urban_cat,
+                                         mic_fhs_cat, mic_has_prison, mic_bf_cat),
+                                    all_vars(!is.na(.))))
+
+boot.mic_new_2[["pred.int_state"]] <- boot.mic_new_2[["pred.int_state"]]  %>%
+  merge(mdf_mic_new_grp %>% ungroup() %>% dplyr::select(state_nm, state) %>% unique(), by = "state")
+
+
+save("boot.mic_new_2", file = "output/fits/boot.mic_new_2.Rda")
 
 
 
@@ -285,18 +285,21 @@ save("boot.mun_new_2", file = "output/fits/boot.mun_new_2.Rda")
 # #################################################################
 # ##              Micro-region: Model 2 (2016-2019)              ##
 # #################################################################
-# boot.mic_prev_2 <- get_preds(fit_object = mic_prev_mod2a, data = mdf_prev_ind %>% 
-#                                filter(!age_cat == "0-4") %>%
-#                                filter(time > 8) %>% 
-#                                filter_at(vars(state, time, result, tratamento, sex, hiv_status,
-#                                               age_cat, health_unit, mic_urban_cat,
-#                                               mic_fhs_cat, mic_has_prison, mic_bf_cat),
-#                                          all_vars(!is.na(.))))
-# 
-# boot.mic_prev_2[["pred.int_state"]] <- boot.mic_prev_2[["pred.int_state"]]  %>% 
-#   merge(mdf_prev_ind %>% ungroup() %>% dplyr::select(state_nm, state) %>% unique(), by = "state")
-# 
-# save("boot.mic_prev_2", file = "output/fits/boot.mic_prev_2.Rda")
+boot.mic_prev_2 <- get_preds(fit_object = mic_prev_mod2, data = mdf_prev_ind %>%
+                               filter(!age_cat == "0-4") %>%
+                               filter(time > 8) %>%
+                               filter_at(vars(state, time, result, tratamento, sex, hiv_status,
+                                              age_cat, health_unit, mic_urban_cat,
+                                              mic_fhs_cat, mic_has_prison, mic_bf_cat),
+                                         all_vars(!is.na(.))))
+
+boot.mic_prev_2[["pred.int_state"]] <- boot.mic_prev_2[["pred.int_state"]]  %>%
+  merge(mdf_prev_ind %>% ungroup() %>% dplyr::select(state_nm, state) %>% unique(), by = "state")
+
+boot.mic_prev_2[["pred.int_state_year"]] <- boot.mic_prev_2[["pred.int_state_year"]]  %>%
+  merge(mdf_prev_ind %>% ungroup() %>% dplyr::select(state_nm, state) %>% unique(), by = "state")
+
+save("boot.mic_prev_2", file = "output/fits/boot.mic_prev_2.Rda")
 
 
 
