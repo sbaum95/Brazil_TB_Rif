@@ -15,17 +15,20 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Model Specification
 
+### Motivation
+
+
 ### Overview
 
--   State-level hierarchical generalized additive model (GAM) that models the prevalence of RR-TB positive cases per quarter among incident TB cases between 2014-2019
+-   Estimate state-level prevalence of Rif positive cases per quarter among incident TB cases between 2014-2019
 
 -   Fit smoothing functions to reduce the noise we were seeing in previous models
 
--   Models risk of positivity by characteristics of patient and municipality where they reside
+<!-- -   Models risk of positivity by characteristics of patient and municipality where they reside -->
 
     <!-- -   Note: Between 2014-2019, \~3,300 cases diagnosed outside of patient's state of residence; \~88,000 cases diagnosed outside patient's municipality of residence (e.g. cases are not being attributed to municipalities/states in which cases are generated) -->
 
--   Separate models for new cases and previously treated cases (e.g. relapse and re-entry)
+-   Separate models for new cases and previously treated (e.g. relapse and re-entry) cases 
 
 ### Set Up
 
@@ -46,8 +49,8 @@ result ~ s(state, bs = "re") + s(time) + s(time, by = state, id = 1) + age_cat +
     -   Sex
     -   Level of health unit where patient is diagnosed - Based on CNES merge
 
--   Fixed effects for characteristics of region where patient resides (either municipality or micro-region level):
-
+-   Fixed effects for characteristics of municipality where patient resides: 
+    -   Also ran at micro-region level to compare, but similar point estimates, wider uncertainity intervals, also municipality seems more policy relevant
     -   Urbanicity - Percent of the population in urban setting (2010 census)
     -   Bolsa Familia coverage - Percent of the population benefiting from BF (BF: SAGICAD, 2018; Denominator: 2010 Census)
     -   Presence of prison - Municipality has prison at some point during 2014-2019 period (SISPEN)
@@ -55,9 +58,10 @@ result ~ s(state, bs = "re") + s(time) + s(time, by = state, id = 1) + age_cat +
 
 ### Specifications
 
--   Model 1 - 2014-2019
-
--   Model 2 - 2016-2019
+- Time periods: 
+  - 1) 2014-2019 - Full period 
+  - 2) 2016-2019 - Excluding implementation noise
+  - 3) 2017-2019 - Excluding stock outs 
 
 -   Run separately by case type (new vs. previously treated (relapse, re-entry))
 
@@ -69,61 +73,67 @@ result ~ s(state, bs = "re") + s(time) + s(time, by = state, id = 1) + age_cat +
 
 ## National-level estimates
 
-```{r, echo = FALSE}
+```{r echo=FALSE}
 knitr::include_graphics("output/plots/plot_national_all.png")
 ```
 
 
 
 
-## State-level estimates
+## State-level estimates (Updated)
 
 ### New Cases
 
-A. Municipality-level
+Municipality-level
 
-```{r mun.new, echo = FALSE, out.width = '100%'}
+```{r mun.new, echo=FALSE}
 knitr::include_graphics("output/plots/plot_mun_new.png")
 ```
 
-B. Microregion-level
+### Previous Cases (Updated)
 
-```{r mic.new, echo = FALSE, out.width = '100%'}
-knitr::include_graphics("output/plots/plot_mic_new.png")
-```
+A. Municipality-level (Updated)
 
-### Previous Cases
-
-A. Municipality-level
-
-```{r mun.prev, echo = FALSE, out.width = '100%'}
+```{r mun.prev, echo=FALSE}
 knitr::include_graphics("output/plots/plot_mun_prev.png")
 ```
 
-B. Microregion-level
+B. Microregion-level (Updated)
 
-```{r mic.prev, echo = FALSE, out.width = '100%'}
+```{r mic.prev, echo=FALSE}
 knitr::include_graphics("output/plots/plot_mic_prev.png")
 ```
 
-C. Municipality and Micro-region
+<!-- C. Municipality and Micro-region -->
 
-```{r mun.mic.prev, echo = FALSE, out.width = '100%'}
-knitr::include_graphics("output/plots/plot_mun.mic_prev.png")
-```
+<!-- ```{r mun.mic.prev, eval=FALSE, include=FALSE, out.width=} -->
+<!-- knitr::include_graphics("output/plots/plot_mun.mic_prev.png") -->
+<!-- ``` -->
 
 
 
 ## Bootstrapped Results
-### New Cases 
-```{r boot.net, echo = FALSE, out.width = '100%'}
+### New Cases (Updated)
+```{r boot.new, echo=FALSE}
 knitr::include_graphics("output/plots/plot_boot_nat_new.png")
 knitr::include_graphics("output/plots/plot_boot_new.png")
 ```
 
 
 ### Previous Cases
-```{r boot.prev, echo = FALSE, out.width = '100%'}
+```{r boot.prev, echo=FALSE}
 knitr::include_graphics("output/plots/plot_boot_nat_prev.png")
 knitr::include_graphics("output/plots/plot_boot_prev.png")
 ```
+
+
+<!-- ## Maps  -->
+<!-- ### New Cases -->
+<!-- ```{r map.new_state, echo = FALSE, out.width = '100%'} -->
+<!-- # knitr::include_graphics("output/fig/fig_map_new_st.png") -->
+<!-- ``` -->
+
+<!-- ### Previous Cases -->
+<!-- ```{r map.prev_state, echo = FALSE, out.width = '100%'} -->
+<!-- # knitr::include_graphics("output/fig/fig_map_prev_st.png") -->
+<!-- ``` -->
