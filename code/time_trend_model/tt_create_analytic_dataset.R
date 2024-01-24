@@ -104,8 +104,8 @@ load("data/mdf_new_ind.Rdata")
 
 mdf_mun_new_grp <- mdf_new_ind %>% 
   # filter(!is.na(hiv_status) & !is.na(age) &  !is.na(sex) & !is.na(state) & !is.na(age_cat)) %>%
-  dplyr::select(-c(diag_qrt, age, tratamento)) %>% 
-  group_by(state, state_nm, id_municip, time, age_cat, sex, hiv_status, result, health_unit, 
+  dplyr::select(-c(age, tratamento)) %>% 
+  group_by(state, state_nm, id_municip, time, diag_qrt, age_cat, sex, hiv_status, result, health_unit, 
            mun_urban_cat, mun_has_prison, mun_bf_cat, mun_fhs_cat) %>% 
   count() %>% 
   pivot_wider(names_from = "result", values_from = "n") %>%
