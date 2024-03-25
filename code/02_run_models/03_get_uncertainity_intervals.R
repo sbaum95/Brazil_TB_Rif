@@ -1,17 +1,19 @@
 # Author: Sarah Baum
 # Created: 2024-03-22
-# Updated:
+# Updated: 2024-03-25
 
 # Description: Calculate uncertainity intervals for each model as various aggregation levels
+source("code/dependencies.R")
 
 # Load data ---------------------------------------------------------------
 load("output/fitted_models.rdata")
 
-load(here::here("data/mdf_new_ind.Rdata"))
-load(here::here("data/mdf_prev_ind.Rdata"))
-
-load(here::here("data/mdf_mun_new_grp.Rdata"))
-load(here::here("data/mdf_mun_prev_grp.Rdata"))
+load("output/intervals.Rdata")
+# load(here::here("data/mdf_new_ind.Rdata"))
+# load(here::here("data/mdf_prev_ind.Rdata"))
+# 
+# load(here::here("data/mdf_mun_new_grp.Rdata"))
+# load(here::here("data/mdf_mun_prev_grp.Rdata"))
 
 
 
@@ -87,10 +89,10 @@ get_nat_qrt_int <- function(proj_cases) {
   return(proj_nat_qrt)
   
 }
-get_state_qrt_int <- function(project_cases) {
+get_state_qrt_int <- function(proj_cases) {
   
   proj_state_qrt <- proj_cases %>% 
-    group_by(state_nm, time, diag_qrt) %>% 
+    group_by(state, time, diag_qrt) %>% 
     # Calculate number of projected RR-TB cases for each simulation 
     summarize(across(starts_with("proj"), ~sum(.), .names = "cases_{.col}")) %>% 
     rowwise() %>% 
@@ -110,7 +112,7 @@ get_state_qrt_int <- function(project_cases) {
 
   
 }
-get_nat_yr_int <- function(proj_case) {
+get_nat_yr_int <- function(proj_cases) {
   
   proj_nat_yr <- proj_cases %>% 
     mutate(year = case_when(time <= 4 ~ 2014,
@@ -146,7 +148,7 @@ get_state_yr_int <- function(proj_cases) {
                             time > 12 & time <= 16 ~ 2017,
                             time > 16 & time <= 20 ~ 2018,
                             time > 20 & time <= 24 ~ 2019)) %>%
-    group_by(state_nm, year) %>% 
+    group_by(state, year) %>% 
     # Calculate number of projected RR-TB cases for each simulation 
     summarize(across(starts_with("proj"), ~sum(.), .names = "cases_{.col}")) %>% 
     rowwise() %>% 
@@ -173,7 +175,7 @@ get_intervals <- function(model_name) {
   
   # Pull model object and data 
   model_object <- fitted_models[[model_name]][[1]]
-  data <- fitted_models[[model_name]][[2]]
+  data <- fitted_models[[model_name]][[2]] %>% filter(!is.na(sex))
   
   # Get simulated predictions based on simulation and data
   pred_output <- get_sim_preds(model_object, data)
@@ -189,10 +191,10 @@ get_intervals <- function(model_name) {
   
   # Rename for each model 
   intervals <- list(proj_nat_yr = proj_nat_yr, 
-                    proj_nat_qrt =  proj_nat_qrt, 
+                    proj_nat_qrt = proj_nat_qrt, 
                     proj_state_yr = proj_state_yr, 
                     proj_state_qrt = proj_state_qrt)
-  
+
   # Create a list of interval schemes for each model 
   return(intervals)
   
@@ -205,35 +207,36 @@ get_intervals <- function(model_name) {
 
 
 # Calculate uncertainty intervals for each model --------------------------
-model_name <- names(fitted_models)
-
 intervals <- list()
 
+# model_name <- names(fitted_models)
 # intervals <- lapply(model_name, get_intervals)
-# 
 # intervals <- setNames(intervals, model_name)
 
-intervals[["tt_2014-2019_new"]] <- get_intervals("tt_2014-2019_new")
-intervals[["tt_2015-2019_new"]] <- get_intervals("tt_2015-2019_new")
+# intervals[["tt_2014-2019_new"]] <- get_intervals(model_name = "tt_2014-2019_new")
+# intervals[["tt_2014-2019_prev"]] <- get_intervals(model_name = "tt_2014-2019_prev")
+# intervals[["tt_2015-2019_new"]] <- get_intervals(model_name = "tt_2015-2019_new")
+# intervals[["tt_2015-2019_prev"]] <- get_intervals(model_name = "tt_2015-2019_prev")
+# 
+# intervals[["sp_2014-2019_new"]] <- get_intervals(model_name = "sp_2014-2019_new")
+# intervals[["sp_2015-2019_new"]] <- get_intervals(model_name = "sp_2015-2019_new")
+# intervals[["sp_2014-2019_prev"]] <- get_intervals(model_name = "sp_2014-2019_prev")
+# intervals[["sp_2015-2019_prev"]] <- get_intervals(model_name = "sp_2015-2019_prev")
+# 
+# 
+# intervals[["se1_tt_2015-2019_new"]] <- get_intervals(model_name = "se1_tt_2015-2019_new")
+# intervals[["se1_sp_2015-2019_new"]] <- get_intervals(model_name = "se1_sp_2015-2019_new")
+# intervals[["se1_tt_2015-2019_prev"]] <- get_intervals(model_name = "se1_tt_2015-2019_prev")
+# intervals[["se1_sp_2015-2019_prev"]] <- get_intervals(model_name = "se1_sp_2015-2019_prev")
 
-intervals[["sp_2014-2019_new"]] <- get_intervals("sp_2014-2019_new")
-intervals[["sp_2015-2019_new"]] <- get_intervals("sp_2015-2019_new")
-
-intervals[["tt_2014-2019_prev"]] <- get_intervals("tt_2014-2019_prev")
-intervals[["tt_2015-2019_prev"]] <- get_intervals("tt_2015-2019_prev")
-
-intervals[["sp_2014-2019_prev"]] <- get_intervals("sp_2014-2019_prev")
-intervals[["sp_2015-2019_prev"]] <- get_intervals("sp_2015-2019_prev")
-
-
-
+intervals[["se2_sp_2015-2019_new"]] <- get_intervals(model_name = "se2_sp_2015-2019_new")
+intervals[["se2_sp_2015-2019_prev"]] <- get_intervals(model_name = "se2_sp_2015-2019_prev")
 
 
 
 # store intervals ---------------------------------------------------------
 save(intervals, file = "output/intervals.Rdata")
 
-load("output/intervals.Rdata")
 
 
 
