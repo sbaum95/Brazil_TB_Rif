@@ -1,6 +1,6 @@
 # Author: Sarah Baum
 # Created: 2024-03-22
-# Updated:
+# Updated: 2024-03-25
 
 # Description: Get fitted values from all models
 
@@ -16,11 +16,10 @@ load("output/fitted_models.Rdata")
 # Create function that store fitted values --------------------------------
 get_fitted_values <- function (model_name) {
   
-  # Pull data frame that was fed into model 
-  data <- parse_expr(fitted_models[[model_name]]$data_call)
-  
   # Fit values 
-  fitted_values <- fitted_values(fitted_models[[model_name]], data = eval(data), scale = "response")
+  fitted_values <- fitted_values(fitted_models[[model_name]][[1]], 
+                                 data = fitted_models[[model_name]][[2]], 
+                                 scale = "response")
   
   return(fitted_values)
   
