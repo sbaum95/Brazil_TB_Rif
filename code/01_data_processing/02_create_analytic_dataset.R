@@ -65,7 +65,8 @@ df <- sinan_xpert %>%
          mun_urban_cat, mun_has_prison, mun_bf_cat, mun_fhs_cat, pop_imig, 
          pop_rua, pop_liber, agravtabac, agravalcoo, agravdroga, agravdiabe, cs_escol_n) %>% 
   filter(diag_qrt < "2020-01-01") %>% 
-  filter(!is.na(state))
+  filter(!is.na(state)) %>% 
+  filter(!is.na(sex))
 
 
 
