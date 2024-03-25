@@ -21,6 +21,6 @@ source("code/02_run_models/03_get_uncertainity_intervals.R") # 1.5 hours
 tictoc::toc()
 
 tictoc::tic()
-source("code/02_run_models/04_compile_results.R")
+source("code/02_run_models/04_compile_results.R") # 30 minutes
 tictoc::toc()
 
