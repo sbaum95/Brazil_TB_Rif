@@ -1,6 +1,6 @@
 # Author: Sarah Baum
 # Created: 2024-03-22
-# Updated:
+# Updated: 2024-03-25
 
 # Description: Compile fitted values and uncertainty intervals for all models 
 
@@ -31,8 +31,8 @@ aggregate_fitted_values <- function(model_name, agg_level) {
       case_when(
         agg_level == "nat_yr" ~ as.character(year), 
         agg_level == "nat_qrt" ~ paste(as.character(diag_qrt)), 
-        agg_level == "state_yr" ~ paste(state_nm, state, as.character(year), sep = ","), 
-        agg_level == "state_qrt" ~ paste(state_nm, state, as.character(diag_qrt), sep = ",")
+        agg_level == "state_yr" ~ paste(state, as.character(year), sep = ","), 
+        agg_level == "state_qrt" ~ paste(state, as.character(diag_qrt), sep = ",")
       )
     ) %>% 
     summarize(fitted_RR = sum(fitted * cases))
@@ -43,13 +43,13 @@ aggregate_fitted_values <- function(model_name, agg_level) {
 if (agg_level == "state_qrt") {
     
   fitted <- fitted %>% 
-    separate(colnames(.)[1], into = c("state_nm", "state", "diag_qrt"), sep = ",", remove = TRUE) %>% 
+    separate(colnames(.)[1], into = c("state", "diag_qrt"), sep = ",", remove = TRUE) %>% 
     mutate(model = model_name, 
            diag_qrt = as.Date(diag_qrt))
     
   } else if (agg_level == "state_yr"){ 
     
-    fitted <- fitted %>% separate(colnames(.)[1], into = c("state_nm", "state", "year"), sep = ",", remove = TRUE) %>% 
+    fitted <- fitted %>% separate(colnames(.)[1], into = c("state", "year"), sep = ",", remove = TRUE) %>% 
       mutate(model = model_name, 
              year = as.numeric(year))
   
@@ -80,8 +80,8 @@ get_observed <- function(model_name, agg_level)  {
           case_when(
             agg_level == "nat_yr" ~ as.character(year), 
             agg_level == "nat_qrt" ~ paste(as.character(diag_qrt)), 
-            agg_level == "state_yr" ~ paste(state_nm, as.character(year), sep = ","), 
-            agg_level == "state_qrt" ~ paste(state_nm, as.character(diag_qrt), sep = ",")
+            agg_level == "state_yr" ~ paste(state_nm, sg_uf, as.character(year), sep = ","), 
+            agg_level == "state_qrt" ~ paste(state_nm, sg_uf, as.character(diag_qrt), sep = ",")
           )
         ) %>% 
         summarize(total_TB_cases = n(), 
@@ -99,8 +99,8 @@ get_observed <- function(model_name, agg_level)  {
       case_when(
         agg_level == "nat_yr" ~ as.character(year), 
         agg_level == "nat_qrt" ~ paste(as.character(diag_qrt)), 
-        agg_level == "state_yr" ~ paste(state_nm, as.character(year), sep = ","), 
-        agg_level == "state_qrt" ~ paste(state_nm, as.character(diag_qrt), sep = ",")
+        agg_level == "state_yr" ~ paste(state_nm, sg_uf, as.character(year), sep = ","), 
+        agg_level == "state_qrt" ~ paste(state_nm, sg_uf, as.character(diag_qrt), sep = ",")
       )
     ) %>% 
     summarize(total_TB_cases = n(), 
@@ -114,13 +114,13 @@ get_observed <- function(model_name, agg_level)  {
   if (agg_level == "state_qrt") {
     
     observed <- observed %>% 
-      separate(colnames(.)[1], into = c("state_nm", "diag_qrt"), sep = ",", remove = TRUE) %>% 
+      separate(colnames(.)[1], into = c("state_nm", "state", "diag_qrt"), sep = ",", remove = TRUE) %>% 
       mutate(model = model_name, 
              diag_qrt = as.Date(diag_qrt))
     
   } else if (agg_level == "state_yr"){ 
     
-    observed <- observed %>% separate(colnames(.)[1], into = c("state_nm", "year"), sep = ",", remove = TRUE) %>% 
+    observed <- observed %>% separate(colnames(.)[1], into = c("state_nm", "state", "year"), sep = ",", remove = TRUE) %>% 
       mutate(model = model_name, 
              year = as.numeric(year))
     
@@ -140,11 +140,12 @@ get_observed <- function(model_name, agg_level)  {
 }
   
   
-compile_results <- function(levels_to_aggregate) {
+compile_results <- function(agg_level) {
+
 
   # Get fitted values -------------------------------------------------------
   # Aggregate fitted values for relevant models for case type 
-  fitted_list <- lapply(names(fitted_values), aggregate_fitted_values, agg_level = levels_to_aggregate)
+  fitted_list <- lapply(names(fitted_values), aggregate_fitted_values, agg_level)
   
   combined_fitted <- do.call(rbind, fitted_list)
   
@@ -200,11 +201,11 @@ compile_results <- function(levels_to_aggregate) {
   # Combined model estimates and observed -----------------------------------
   if (agg_level == "state_qrt") {
     
-    results <- left_join(combined_est, observed, by = c("model", "state_nm", "diag_qrt"))
+    results <- left_join(combined_est, observed, by = c("model", "state", "diag_qrt"))
     
   } else if (agg_level == "state_yr"){
     
-    results <- left_join(combined_est, observed, by = c("model", "state_nm", "year"))
+    results <- left_join(combined_est, observed, by = c("model", "state", "year"))
     
   } else if (agg_level == "nat_yr"){
     
@@ -219,7 +220,23 @@ compile_results <- function(levels_to_aggregate) {
   results$model <- split_model[, 2]
   results$case_type <- split_model[, 3]
   
-  results <- results %>% select(model, case_type, state_nm, state, time, diag_qrt, fitted_RR, proj_median, everything())
+  
+  if (agg_level == "state_qrt") {
+    
+    results <- results %>% select(model, case_type, state_nm, state, time, diag_qrt, fitted_RR, proj_median, everything())
+    
+  } else if (agg_level == "state_yr"){
+    
+    results <- results %>% select(model, case_type, state_nm, state, year, fitted_RR, proj_median, everything())
+    
+  } else if (agg_level == "nat_yr"){
+    
+    results <- results %>% select(model, case_type, year, fitted_RR, proj_median, everything())
+    
+  } else{
+    
+    results <- results %>% select(model, case_type, time, diag_qrt, fitted_RR, proj_median, everything())
+  }
   
   return(results)
   
@@ -229,16 +246,19 @@ compile_results <- function(levels_to_aggregate) {
 
 
 # Output results for each aggregation level -------------------------------
-levels_to_aggregate <- c("nat_yr", "nat_qrt", "state_yr", "state_qrt")
+# levels_to_aggregate <- c("nat_yr", "nat_qrt", "state_yr", "state_qrt")
 
 results_list <- list()
 
-results_list <- lapply(levels_to_aggregate, compile_results)
+# results_list <- lapply(levels_to_aggregate, compile_results)
+# compiled_results <- setNames(results_list, levels_to_aggregate)
 
-compiled_results <- setNames(results_list, levels_to_aggregate)
+results_list[["nat_yr"]] <- compile_results(agg_level = "nat_yr")
+results_list[["nat_qrt"]] <- compile_results(agg_level = "nat_qrt")
+results_list[["state_yr"]] <- compile_results(agg_level = "state_yr")
+results_list[["state_qrt"]] <- compile_results(agg_level = "state_qrt")
 
-
-
+compiled_results <- results_list
 
 # Store compiled results --------------------------------------------------
 save(compiled_results, file = "output/compiled_results.Rdata")
