@@ -1,60 +1,68 @@
+
+
 source("code/dependencies.R")
+
 library(RColorBrewer)
 
 # Load data and results ---------------------------------------------------
-load("data/mdf_mun_new_grp.Rdata")
-load("data/mdf_mun_prev_grp.Rdata")
+# load("data/mdf_mun_new_grp.Rdata")
+# load("data/mdf_mun_prev_grp.Rdata")
 load("output/compiled_results.Rdata")
 
 
 
 # Separate plotting into functions ----------------------------------------
 
-plot_observed <- function () {
+plot_observed <- function(quarter, case_type1 = NULL, case_type2 = NULL) {
 
-  observed <- ggplot() + 
-  # Observed RR-TB positivity
+  data <- compiled_results[["nat_qrt"]] %>% 
+    filter(model == "tt_2014-2019") %>% 
+    filter(time >= quarter)
+  
+  # Determine whether plot both case types or only one
+  if (!is.null(case_type1) & !is.null(case_type2)) {
+    
+    data_plot <- subset(data, case_type %in% c(case_type1, case_type2))
+    
+  } else if (!is.null(case_type1)) {
+    
+    data_plot <- subset(data, case_type == case_type1)
+    
+  } else {
+    data_plot <- subset(data, case_type == case_type2)
+  }
+  
+  data_plot %>%
+  ggplot() +
   geom_point(
-    data = compiled_results[["nat_qrt"]] %>% 
-      filter(model == "tt_2014-2019" & case_type == "new"), 
-    aes(x = diag_qrt, y = obs_pct_pos*100, size = obs_num_tested, color = "New"), alpha = 0.5) +
-    
-    ## Percent with conclusive Xpert result
-    geom_line(
-      data = compiled_results[["nat_qrt"]] %>% 
-        filter(model == "tt_2014-2019" & case_type == "new"), 
-      aes(x = diag_qrt, y = obs_pct_tested*100,  color = "New"), alpha = 0.5) + 
-    
-    geom_point(
-      data = compiled_results[["nat_qrt"]] %>% 
-        filter(model == "tt_2014-2019" & case_type == "prev"), 
-      aes(x = diag_qrt, y = obs_pct_pos*100, size = obs_num_tested, color = "prev"), alpha = 0.5) +
-    
-    ## Percent with conclusive Xpert result
-    geom_line(
-      data = compiled_results[["nat_qrt"]] %>% 
-        filter(model == "tt_2014-2019" & case_type == "prev"), 
-      aes(x = diag_qrt, y = obs_pct_tested*100,  color = "prev"), alpha = 0.5)
-  
-  return(observed)
-  
+    aes(x = diag_qrt, y = obs_pct_pos * 100, size = obs_num_tested, color = case_type),
+    alpha = 0.5
+  ) +
+
+  ## Percent with conclusive Xpert result
+  geom_line(
+    aes(x = diag_qrt, y = obs_pct_tested * 100, color = case_type),
+    alpha = 0.5
+  )
+
 }
 
-plot_models <- function(agg_level, model, case_type){
+plot_model <- function(plot, agg_level, model_name, case_type){
   
-  ggplot() + 
+  plot + 
   geom_line(
     data = compiled_results[[agg_level]] %>% 
-      filter(model == model & case_type == case_type),
+      filter(model == model_name & case_type == case_type),
     aes(diag_qrt, (fitted_RR/total_TB_cases)*100, color = case_type, linetype = model))
     
   
 }
 
-
 set_base_aes_specs <- function(plot) {
   plot + 
-  scale_y_continuous(limits = c(0, 40), 
+  scale_y_continuous(expand = c(0, 0), # So X-axis set at 0
+                     limits = c(0, 40), 
+                     labels = scales::label_percent(scale = 1),
                      sec.axis = sec_axis(~ .,
                                          breaks = seq(0, 50, by = 10),  # Specify breaks for the secondary axis
                                          name = "Percent of TB cases with confirmed Xpert result", # Format labels as percentages
@@ -69,145 +77,93 @@ set_base_aes_specs <- function(plot) {
     ylab("Percent RR-TB positive") + 
     theme_bw() + 
     theme(
-      axis.text.x  = element_text(size = 12), 
-      axis.text.y  = element_text(size = 12), 
+      axis.text.x  = element_text(size = 10), 
+      axis.text.y  = element_text(size = 9), 
       legend.text = element_text(size = 12), 
       title = element_text(size = 12)) +
+    labs(
+      size = "Number of cases with conclusive Xpert result",
+      color = "Case Type"
+    ) + 
     scale_size(
       range = c(0.5, 5)
+    ) + 
+    scale_color_manual(
+      name = "Case Type",
+      labels = c(
+        "New",
+        "Previous"
+      ),
+      values = c(
+        "black",
+               "red"
+      )
     )
   
 }
 
 
-ggplot() + 
-  plot_models(agg_level = "nat_qrt", model = "tt_2014-2019", case_type = "new")
-
 
 # Plot in ggplot ----------------------------------------------------------
+plot_observed(quarter = 1, "new", "prev")
 
-  
-plot_TT_SP <- function(plot) {
-
-## New cases ---------------------------------------------------------------
-
-  plot + 
-  # Modeled results:
-  ## TT: 2014-2019
-  geom_line(
-    data = compiled_results[["nat_qrt"]] %>%
-      filter(model == "tt_2014-2019" & case_type == "new"),
-    aes(diag_qrt, (fitted_RR/total_TB_cases)*100, color = "New", linetype = "2014-2019 (TT)")) +
-
-  ### TT: 2015-2019
-  geom_line(
-    data = compiled_results[["nat_qrt"]] %>%
-      filter(model == "tt_2015-2019" & case_type == "new"),
-    aes(diag_qrt, (fitted_RR/total_TB_cases)*100, color = "New", linetype = "2015-2019 (TT)")) +
-
-  ### SP: 2014-2019
-  geom_line(
-    data = compiled_results[["nat_qrt"]] %>%
-      filter(model == "sp_2014-2019" & case_type == "new"),
-    aes(diag_qrt, (fitted_RR/total_TB_cases)*100, color = "New", linetype = "2014-2019 (SP)")) +
-
-  ### SP: 2015-2019
-  geom_line(
-    data = compiled_results[["nat_qrt"]] %>%
-      filter(model == "sp_2015-2019" & case_type == "new"),
-    aes(diag_qrt, (fitted_RR/total_TB_cases)*100, color = "New", linetype = "2015-2019 (SP)")) +
-  
-  
-
-## Previous cases ----------------------------------------------------------
-  
-  ## Modeled results:
-  ### TT: 2014-2019
-  geom_line(
-    data = compiled_results[["nat_qrt"]] %>%
-      filter(model == "tt_2014-2019" & case_type == "prev"),
-    aes(diag_qrt, (fitted_RR/total_TB_cases)*100, color = "prev", linetype = "2014-2019 (TT)")) +
-
-  ### TT: 2015-2019
-  geom_line(
-    data = compiled_results[["nat_qrt"]] %>%
-      filter(model == "tt_2015-2019" & case_type == "prev"),
-    aes(diag_qrt, (fitted_RR/total_TB_cases)*100, color = "prev", linetype = "2015-2019 (TT)")) +
-  
-  ### SP: 2014-2019
-  geom_line(
-    data = compiled_results[["nat_qrt"]] %>%
-      filter(model == "sp_2014-2019" & case_type == "prev"),
-    aes(diag_qrt, (fitted_RR/total_TB_cases)*100, color = "prev", linetype = "2014-2019 (SP)")) +
-
-  ### SP: 2015-2019
-  geom_line(
-    data = compiled_results[["nat_qrt"]] %>%
-      filter(model == "sp_2015-2019" & case_type == "prev"),
-    aes(diag_qrt, (fitted_RR/total_TB_cases)*100, color = "prev", linetype = "2015-2019 (SP)")) +
-
-  
-  
-
-## Format figure  ----------------------------------------------------------
-  ## Create secondary axis for percent tested 
-  scale_y_continuous(limits = c(0, 40), 
-                     sec.axis = sec_axis(~ .,
-                                         breaks = seq(0, 50, by = 10),  # Specify breaks for the secondary axis
-                                         name = "Percent of total TB cases with confirmed Xpert result", # Format labels as percentages
-                                         labels = scales::label_percent(scale = 1)
-                     )
-  ) + 
-  scale_x_date(
-    date_breaks = "1 year",  # Set breaks to 1 year
-    date_labels = "%b %Y"  # Format labels as year
-  ) + 
-  xlab("Time (Quarter)") + 
-  ylab("Percent RR-TB positive") + 
-  theme_bw() + 
-  theme(
-        axis.text.x  = element_text(size = 12), 
-        axis.text.y  = element_text(size = 12), 
-        legend.text = element_text(size = 12), 
-        title = element_text(size = 12)) +
-  scale_size(
-    range = c(0.5, 5)
-  ) +
-  labs(size = "Number of cases with conclusive Xpert result",
-       color = "Case Type") +
-  scale_fill_manual(values = c("Fitted")) +
-  scale_color_manual(name="Case Type",
-                     labels=c("New",
-                              "Previous"),
-                     values=c("black", 
-                                     "red")) + 
-  scale_linetype_manual(name = "Model", 
-                        labels = c("2014-2019 (TT)", 
-                                   "2014-2019 (SP)", 
-                                   "2015-2019 (TT)", 
-                                   "2015-2019 (SP)" 
-                        ),
-                        values=c(1, 2, 3, 4))
-
-}
+fig_observed_trends <- plot_observed(quater) %>% set_base_aes_specs() 
 
 
-# Save output -------------------------------------------------------------
-fig_observed_trends <- plot_observed() %>% 
+fig_tt <- plot_observed(quarter = 1, "new", "prev") %>%  
+  plot_model(agg_level = "nat_qrt", model_name = "tt_2014-2019") %>% 
+  plot_model(agg_level = "nat_qrt", model_name = "tt_2015-2019") %>% 
   set_base_aes_specs() + 
-  labs(size = "Number of cases with conclusive Xpert result",
-       color = "Case Type") +
-  scale_color_manual(name="Case Type",
-                     labels=c("New",
-                              "Previous"),
-                     values=c("black", 
-                                     "red"))
-                                     
+  scale_linetype_manual(name = "Model", 
+                        labels = c("tt_2014-2019" = "Time trend: 2014-2019", 
+                                   "tt_2015-2019" = "Time trend: 2015-2019 (Q12 dropped)"),
+                        values=c(1, 2, 3))
 
-fig_national_trends_TT_SP <- plot_observed() %>% plot_TT_SP()
+
+fig_tt_sp <- plot_observed(quarter = 1, "new", "prev") %>%  
+  plot_model(agg_level = "nat_qrt", model_name = "tt_2014-2019") %>% 
+  plot_model(agg_level = "nat_qrt", model_name = "sp_2014-2019") %>% 
+  plot_model(agg_level = "nat_qrt", model_name = "sp_2015-2019") %>% 
+  set_base_aes_specs() + 
+  scale_linetype_manual(name = "Model", 
+                        labels = c("tt_2014-2019" = "Time trend: 2014-2019 (For reference)", 
+                                   "sp_2014-2019" = "Spatial: 2014-2019", 
+                                   "sp_2015-2019" = "Spatial: 2015-2019 (Q12 dropped)"),
+                        values=c("tt_2014-2019" = "solid", 
+                                 "sp_2014-2019" = "dashed",
+                                 "sp_2015-2019" = "dotted"
+                                 ))
+  
+
+# Sensitivity analyses 
+plot_observed(quarter = 4) %>%  
+  plot_model(agg_level = "nat_qrt", model_name = "tt_2015-2019") %>%
+  plot_model(agg_level = "nat_qrt", model_name = "se1_tt_2015-2019") %>% 
+  set_base_aes_specs() + 
+  scale_linetype_manual(name = "Model", 
+                        labels = c("tt_2015-2019" = "Time trend", 
+                                   "se1_tt_2015-2019" = "Time trend (patient covs)"),
+                        values=c("tt_2014-2019" = "solid", 
+                                 "sp_2014-2019" = "dashed",
+                                 "sp_2015-2019" = "dotted"
+                        ))
+
+
+plot_observed() %>%  
+  plot_model(agg_level = "nat_qrt", case_type = "new", model_name = "sp_2015-2019") %>%
+  plot_model(agg_level = "nat_qrt", case_type = "new", model_name = "se1_sp_2015-2019") %>% 
+  plot_model(agg_level = "nat_qrt", case_type = "new", model_name = "se2_sp_2015-2019") %>% 
+  set_base_aes_specs()
+  
+
   
   
 
+
+
+
+
+# Save plots --------------------------------------------------------------
 ggsave(fig_observed_trends, filename = "output/figures_and_tables/fig_observed_trends.png", width = 14, height = 6)
 ggsave(fig_national_trends_TT, filename = "output/figures_and_tables/fig_national_trends_TT.png", width = 14, height = 6)
 ggsave(fig_national_trends_TT_SP, filename = "output/figures_and_tables/fig_national_trends_TT_SP.png", width = 14, height = 6)
