@@ -5,16 +5,25 @@
 # Description: Compile fitted values and uncertainty intervals for all models 
 
 
-# Load data ---------------------------------------------------------------
-load("data/sinan_xpert.rdata") # observed data
+# # Load data ---------------------------------------------------------------
+# load("data/sinan_xpert_tmp.rdata") # observed data
+# 
+# sinan_xpert <- sinan_tmp 
+# 
+# load("output/fitted_values_tmp.rdata") # fitted values from model
+# load("output/intervals_tmp.rdata") # uncertainty intervals from simulations
+# 
 
-load("output/fitted_values.rdata") # fitted values from model
-load("output/intervals.rdata") # uncertainty intervals from simulations
-
+## Load state population for 2010
+pop_UF <- read_excel("data/Brazil_population_UF.xls", skip = 6) %>% 
+  rename(state = "...1", 
+         pop_2010 = "...2") %>% 
+  select(state, pop_2010) %>% 
+  filter(!is.na(pop_2010)) %>% 
+  filter(!state %in% c("Brasil", "Centro-Oeste", "Norte", "Nordeste", "Sudeste", "Sul"))
 
 
 # Write functions to compile results --------------------------------------
-
 
 aggregate_fitted_values <- function(model_name, agg_level) {
   
@@ -136,16 +145,27 @@ get_observed <- function(model_name, agg_level)  {
              diag_qrt = as.Date(diag_qrt))
   }
   
+  
+  # Add state population 
+  if (grepl("state", agg_level)) {
+    
+    observed <- left_join(observed, pop_UF, by = c("state_nm" = "state"))
+
+    
+  } else { 
+    
+  }
+  
   return(observed)
 }
   
   
-compile_results <- function(agg_level) {
+compile_results <- function(agg_level, model_list) {
 
 
   # Get fitted values -------------------------------------------------------
   # Aggregate fitted values for relevant models for case type 
-  fitted_list <- lapply(names(fitted_values), aggregate_fitted_values, agg_level)
+  fitted_list <- lapply(model_list, aggregate_fitted_values, agg_level)
   
   combined_fitted <- do.call(rbind, fitted_list)
   
@@ -153,7 +173,7 @@ compile_results <- function(agg_level) {
 
   # Get intervals -----------------------------------------------------------
   # Pull intervals for model based on aggregation level 
-  interval_list <- lapply(names(fitted_values), function(model_name) {
+  interval_list <- lapply(model_list, function(model_name) {
     
     if (grepl("state", agg_level)) {
       
@@ -193,7 +213,7 @@ compile_results <- function(agg_level) {
 
 
   # Get observed data -------------------------------------------------------
-  observed_list <- lapply(names(fitted_values), get_observed, agg_level = agg_level)
+  observed_list <- lapply(model_list, get_observed, agg_level = agg_level)
   
   observed <- do.call(rbind, observed_list)
   
@@ -245,24 +265,26 @@ compile_results <- function(agg_level) {
 
 
 
-# Output results for each aggregation level -------------------------------
-# levels_to_aggregate <- c("nat_yr", "nat_qrt", "state_yr", "state_qrt")
-
-results_list <- list()
-
-# results_list <- lapply(levels_to_aggregate, compile_results)
-# compiled_results <- setNames(results_list, levels_to_aggregate)
-
-results_list[["nat_yr"]] <- compile_results(agg_level = "nat_yr")
-results_list[["nat_qrt"]] <- compile_results(agg_level = "nat_qrt")
-results_list[["state_yr"]] <- compile_results(agg_level = "state_yr")
-results_list[["state_qrt"]] <- compile_results(agg_level = "state_qrt")
-
-compiled_results <- results_list
-
-# Store compiled results --------------------------------------------------
-save(compiled_results, file = "output/compiled_results.Rdata")
-
+# # Output results for each aggregation level -------------------------------
+# # levels_to_aggregate <- c("nat_yr", "nat_qrt", "state_yr", "state_qrt")
+# 
+# model_list <- names(fitted_values)[grepl("sp_", names(fitted_values))]
+# 
+# results_list <- list()
+# 
+# # results_list <- lapply(levels_to_aggregate, compile_results)
+# # compiled_results <- setNames(results_list, levels_to_aggregate)
+# 
+# results_list[["nat_yr"]] <- compile_results(agg_level = "nat_yr", model_list = model_list)
+# results_list[["nat_qrt"]] <- compile_results(agg_level = "nat_qrt", model_list = model_list)
+# results_list[["state_yr"]] <- compile_results(agg_level = "state_yr", model_list = model_list)
+# results_list[["state_qrt"]] <- compile_results(agg_level = "state_qrt", model_list = model_list)
+# 
+# compiled_results <- results_list
+# 
+# # Store compiled results --------------------------------------------------
+# save(compiled_results, file = "output/compiled_results_tmp.Rdata")
+# 
 
 
 
