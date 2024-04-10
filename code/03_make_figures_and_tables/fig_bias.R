@@ -10,32 +10,25 @@ fig_bias <- ggplot() +
   ## Plot point estimate 
   geom_line(
     data = compiled_results[["nat_qrt"]] %>% 
-      filter(model == "sp_2015-2019" & case_type == "new"),
-    aes(diag_qrt, fitted_RR/obs_RR, color = "New")) + 
+      filter(model == "sp_2015-2019") %>% 
+      group_by(case_type) %>% 
+      mutate(bias = fitted_RR/obs_RR),
+    aes(diag_qrt, bias, color = case_type)) + 
   
   ## Plot error bar 
   geom_errorbar(data = compiled_results[["nat_qrt"]] %>% 
-                  filter(model == "sp_2015-2019" & case_type == "new"), 
-                aes(x = diag_qrt, ymin = proj_lci/obs_RR, ymax = proj_hci/obs_RR, color = "New", width = 40)) + 
-  
-  
-  # quantify bias for previous cases
-  geom_line(
-    data = compiled_results[["nat_qrt"]] %>% 
-      filter(model == "sp_2015-2019" & case_type == "prev"),
-    aes(diag_qrt, fitted_RR/obs_RR, color = "Previous")) + 
-  
-  ## Plot error bar 
-  geom_errorbar(data = compiled_results[["nat_qrt"]] %>% 
-                  filter(model == "sp_2015-2019" & case_type == "prev"), 
-                aes(x = diag_qrt, ymin = proj_lci/obs_RR, ymax = proj_hci/obs_RR, color = "Previous", width = 40)) + 
+                  filter(model == "sp_2015-2019") %>% 
+                  group_by(case_type) %>% 
+                  mutate(bias_lci = proj_lci/obs_RR, 
+                         bias_hci = proj_hci/obs_RR), 
+                aes(x = diag_qrt, ymin = bias_lci, ymax = bias_hci, color = case_type), width = 30) + 
   
   scale_x_date(
     date_breaks = "1 year",  # Set breaks to 1 year
     date_labels = "%b %Y"  # Format labels as year
   ) + 
   
-  xlab("Time (Quarter)") + 
+  xlab("Quarter") + 
   ylab("Ratio of projected to observed") + 
   theme_bw() + 
   theme(strip.background = element_blank(),
@@ -47,8 +40,7 @@ fig_bias <- ggplot() +
   scale_color_manual(name="Case Type",
                      labels=c("New",
                               "Previous"),
-                     values=c("black", "red")) + 
-  ggtitle("Bias: Ratio of projected to observed RR-TB cases (Spatial model)")
+                     values=c("black", "red"))
 
 ggsave(fig_bias, filename = "output/figures_and_tables/fig_bias.png", width = 14, height = 6)
 
