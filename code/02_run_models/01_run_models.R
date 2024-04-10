@@ -3,7 +3,7 @@
 # Updated:
 
 # Description: Run all models
-
+library(rlang)
 
 # Create model functions ---------------------------------------------------
 run_sp_model <- function(name, data, filter_expr, outcome, covariates, latitude, longitude, k_t, k_sp) {
@@ -43,7 +43,6 @@ run_sp_model <- function(name, data, filter_expr, outcome, covariates, latitude,
   # Run model
   model_object <- bam(
     formula = as.formula(formula_string),
-    # formula = cbind(positive, negative) ~ s(state, bs = "re"),
     data = data,
     family = binomial(link = "logit"),
     method = "REML"
@@ -174,7 +173,7 @@ fitted_models[["sp_2015-2019_prev"]] <- run_sp_model(
   data = mdf_prev_ind %>% filter(time >= 5),
   filter_expr = quo(time != 12),
   outcome = "cbind(positive, negative)",
-  covariates = c("tratamento","age_cat", "hiv_status", "sex", "health_unit"),
+  covariates = c("tratamento", "age_cat", "sex", "hiv_status", "health_unit"),
   latitude = "lat", 
   longitude = "lon",
   k_t = 19,
