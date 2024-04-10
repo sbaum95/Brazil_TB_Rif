@@ -163,7 +163,7 @@ get_intervals <- function(model_name) {
   
   # Pull model object and data 
   model_object <- fitted_models[[model_name]][[1]]
-  data <- fitted_models[[model_name]][[2]] %>% filter(!is.na(lat))
+  data <- fitted_models[[model_name]][[2]]
   
   # Get simulated predictions based on simulation and data
   pred_output <- get_sim_preds(model_object, data)
