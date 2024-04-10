@@ -9,8 +9,15 @@
 ##  -- Check to see whether notification and treatment unit are the same
 
 load_health_unit_type <- function(years, sinan_tmp) {
-  health_unit <- read_dta("data/health_service_level.dta") %>% 
-    rename(sg_uf_unidade = state, 
+  
+  health_unit <- read_dta("data/health_service_level.dta")
+  
+  ## Bring in state codes to properly code sg_uf_unidade
+  state_codes <- read_excel("data/StateCodes.xlsx") %>%
+    select(sg_uf, uf_code)
+
+  health_unit <- left_join(health_unit, state_codes, by = c("state" = "uf_code")) %>% 
+    rename(sg_uf_unidade = sg_uf, 
            id_mn_unidade = municip_cod)
 
   sinan_tmp$id_unidade <- as.numeric(as.character(sinan_tmp$id_unidade))
