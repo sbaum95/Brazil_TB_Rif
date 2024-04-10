@@ -39,13 +39,13 @@ load_and_clean_sinan <- function() {
   
   
   # Impute missing state/mun ------------------------------------------------
-  # Impute missing state and municipality with location of health unit (119 patients have a missing )
+  # Impute missing state and municipality with location of health unit (117 patients have a missing  state, 119 missing municip)
  sinan_tmp <- sinan_tmp %>%
   mutate(
-    id_mn_resi = if_else(is.na(id_mn_resi) & !is.na(id_mn_unidade), id_mn_unidade,
+    id_mn_resi_clean = if_else(is.na(id_mn_resi) & !is.na(id_mn_unidade), id_mn_unidade,
       if_else(is.na(id_mn_resi) & is.na(id_mn_unidade), id_mn_not, id_mn_resi)
     ),
-    sg_uf = if_else(is.na(sg_uf) & !is.na(sg_uf_unidade), sg_uf_unidade,
+    sg_uf_clean = if_else(is.na(sg_uf) & !is.na(sg_uf_unidade), sg_uf_unidade,
       if_else(is.na(sg_uf) & is.na(sg_uf_unidade), sg_uf_not, sg_uf)
     )
   )
@@ -53,11 +53,12 @@ load_and_clean_sinan <- function() {
   
   # Add municipality name and population ------------------------------------
 
-  # add state name
+  # add state name and region
   state_name <- read_xlsx("data/StateCodes.xlsx") %>%
     mutate(sg_uf = as.factor(sg_uf))
 
-  sinan_tmp <- left_join(sinan_tmp, state_name %>% select(sg_uf, NAME_1, NAME_2), by = "sg_uf") %>% rename(state_nm = NAME_1, region_nm = NAME_2)
+  sinan_tmp <- left_join(sinan_tmp, state_name %>% select(sg_uf, NAME_1, NAME_2), by = c("sg_uf_clean" = "sg_uf")) %>% 
+    rename(state_nm = NAME_1, region_nm = NAME_2)
 
 
 
@@ -71,7 +72,8 @@ load_and_clean_sinan <- function() {
       mun_pop_2010 = as.numeric(gsub("\\.", "", pop.tot.2010))
     )
 
-  sinan_tmp <- left_join(sinan_tmp, mun_population %>% select(id_mn_resi, sg_uf, mun_pop_2010), by = c("id_mn_resi", "sg_uf"))
+  sinan_tmp <- left_join(sinan_tmp, mun_population %>% select(id_mn_resi, sg_uf, mun_pop_2010), 
+                         by = c("id_mn_resi_clean" = "id_mn_resi", "sg_uf_clean" = "sg_uf"))
 
 
 
@@ -247,7 +249,7 @@ load_and_clean_sinan <- function() {
       ) %>% as.factor() %>% relevel(ref = "no")
     ) %>% 
     
-    rename(state = sg_uf)
+    rename(state = sg_uf_clean)
 
 
 
