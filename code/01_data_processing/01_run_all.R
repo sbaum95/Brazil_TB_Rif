@@ -57,6 +57,6 @@ tictoc::toc()
 
 
 # write files --------------------------------------------------------------
-save(sinan_tmp, file = "data/sinan_xpert_tmp.Rdata")
+save(sinan_tmp, file = "data/sinan_tmp.Rdata")
 save(mdf_new_ind, file = "data/mdf_new_ind_tmp.Rdata")
 save(mdf_prev_ind, file = "data/mdf_prev_ind_tmp.Rdata")
