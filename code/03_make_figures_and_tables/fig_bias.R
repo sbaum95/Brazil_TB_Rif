@@ -10,25 +10,25 @@ fig_bias <- ggplot() +
   ## Plot point estimate 
   geom_line(
     data = compiled_results[["nat_qrt"]] %>% 
-      filter(model == "tt_2015-2019" & case_type == "new"),
-    aes(diag_qrt, obs_RR/fitted_RR, color = "New")) + 
+      filter(model == "sp_2015-2019" & case_type == "new"),
+    aes(diag_qrt, fitted_RR/obs_RR, color = "New")) + 
   
   ## Plot error bar 
   geom_errorbar(data = compiled_results[["nat_qrt"]] %>% 
-                  filter(model == "tt_2015-2019" & case_type == "new"), 
-                aes(x = diag_qrt, ymin = obs_RR/proj_lci, ymax = obs_RR/proj_hci, color = "New", width = 40)) + 
+                  filter(model == "sp_2015-2019" & case_type == "new"), 
+                aes(x = diag_qrt, ymin = proj_lci/obs_RR, ymax = proj_hci/obs_RR, color = "New", width = 40)) + 
   
   
   # quantify bias for previous cases
   geom_line(
     data = compiled_results[["nat_qrt"]] %>% 
-      filter(model == "tt_2015-2019" & case_type == "prev"),
-    aes(diag_qrt, obs_RR/fitted_RR, color = "Previous")) + 
+      filter(model == "sp_2015-2019" & case_type == "prev"),
+    aes(diag_qrt, fitted_RR/obs_RR, color = "Previous")) + 
   
   ## Plot error bar 
   geom_errorbar(data = compiled_results[["nat_qrt"]] %>% 
-                  filter(model == "tt_2015-2019" & case_type == "prev"), 
-                aes(x = diag_qrt, ymin = obs_RR/proj_lci, ymax = obs_RR/proj_hci, color = "Previous", width = 40)) + 
+                  filter(model == "sp_2015-2019" & case_type == "prev"), 
+                aes(x = diag_qrt, ymin = proj_lci/obs_RR, ymax = proj_hci/obs_RR, color = "Previous", width = 40)) + 
   
   scale_x_date(
     date_breaks = "1 year",  # Set breaks to 1 year
@@ -36,7 +36,7 @@ fig_bias <- ggplot() +
   ) + 
   
   xlab("Time (Quarter)") + 
-  ylab("Ratio of observed to projected RR-TB cases") + 
+  ylab("Ratio of projected to observed") + 
   theme_bw() + 
   theme(strip.background = element_blank(),
         strip.text = element_text(size = 11),
@@ -48,10 +48,7 @@ fig_bias <- ggplot() +
                      labels=c("New",
                               "Previous"),
                      values=c("black", "red")) + 
-  scale_linetype_manual(name = "Model", 
-                        labels = c("2014-2019", 
-                                   "2015-2019"),
-                        values=c(1, 2))
+  ggtitle("Bias: Ratio of projected to observed RR-TB cases (Spatial model)")
 
 ggsave(fig_bias, filename = "output/figures_and_tables/fig_bias.png", width = 14, height = 6)
 

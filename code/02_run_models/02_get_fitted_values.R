@@ -7,13 +7,14 @@
 
 
 
-# Load data and model output ----------------------------------------------
-load("data/mdf_mun_new_grp.Rdata")
-load("data/mdf_prev_ind.Rdata")
-load("output/fitted_models.Rdata")
+
 
 
 # Create function that store fitted values --------------------------------
+
+## Note: The following function fits to the data that the model is run on -- so
+## it will not impute Q12 if dropped from the model
+
 get_fitted_values <- function (model_name) {
   
   # Fit values 
@@ -24,6 +25,8 @@ get_fitted_values <- function (model_name) {
   return(fitted_values)
   
 }
+
+
 
 # Get fitted values from models -------------------------------------------
 fitted_values <- list()
@@ -36,7 +39,6 @@ fitted_values <- setNames(fitted_values_list, model_name)
 
 
 # Store fitted values -----------------------------------------------------
-save(fitted_values, file = "output/fitted_values.Rdata")
-
+save(fitted_values, file = fitted_file_name)
 
 

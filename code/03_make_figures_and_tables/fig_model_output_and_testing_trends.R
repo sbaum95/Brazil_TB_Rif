@@ -2,7 +2,6 @@
 
 source("code/dependencies.R")
 
-library(RColorBrewer)
 
 # Load data and results ---------------------------------------------------
 # load("data/mdf_mun_new_grp.Rdata")
@@ -10,42 +9,47 @@ library(RColorBrewer)
 load("output/compiled_results.Rdata")
 
 
-
 # Separate plotting into functions ----------------------------------------
 
 plot_observed <- function(quarter, case_type1 = NULL, case_type2 = NULL) {
 
   data <- compiled_results[["nat_qrt"]] %>% 
-    filter(model == "tt_2014-2019") %>% 
-    filter(time >= quarter)
+    group_by(case_type) %>% 
+    filter(model == "sp_2014-2019") %>% 
+    filter(diag_qrt >= quarter)
+
   
   # Determine whether plot both case types or only one
   if (!is.null(case_type1) & !is.null(case_type2)) {
     
-    data_plot <- subset(data, case_type %in% c(case_type1, case_type2))
+    data_plot <- data %>% filter(case_type %in% c(case_type1, case_type2))
     
   } else if (!is.null(case_type1)) {
     
-    data_plot <- subset(data, case_type == case_type1)
+    data_plot <- data %>% filter(case_type == case_type1)
     
   } else {
-    data_plot <- subset(data, case_type == case_type2)
+    data_plot <- data %>% filter(case_type == case_type2)
   }
   
+  # set max for y axis
+  # y_max <- max((data_plot$obs_RR/data_plot$obs_num_tested)*1000 + 5, (data_plot$fitted_RR/data_plot$total_TB_cases)*1000 + 5) %>% round()
+  # 
+  # make plot 
   data_plot %>%
-  ggplot() +
-  geom_point(
-    aes(x = diag_qrt, y = obs_pct_pos * 100, size = obs_num_tested, color = case_type),
-    alpha = 0.5
-  ) +
-
-  ## Percent with conclusive Xpert result
-  geom_line(
-    aes(x = diag_qrt, y = obs_pct_tested * 100, color = case_type),
-    alpha = 0.5
-  )
+    ggplot() + 
+    
+    # Observed incidence
+    geom_point(aes(x = diag_qrt, y = (obs_RR/obs_num_tested)*1000, color = case_type, size = obs_num_tested), alpha = 0.5) + 
+    
+    # Percent tested among observed
+    geom_line(aes(x = diag_qrt, y = (obs_pct_tested*100)*(300/40), color = case_type), alpha = 0.5)  
+  
+    
 
 }
+
+
 
 plot_model <- function(plot, agg_level, model_name, case_type){
   
@@ -53,28 +57,28 @@ plot_model <- function(plot, agg_level, model_name, case_type){
   geom_line(
     data = compiled_results[[agg_level]] %>% 
       filter(model == model_name & case_type == case_type),
-    aes(diag_qrt, (fitted_RR/total_TB_cases)*100, color = case_type, linetype = model))
-    
+    aes(x = diag_qrt, y = (fitted_RR/total_TB_cases)*1000, color = case_type, linetype = model))
   
 }
 
+
+
 set_base_aes_specs <- function(plot) {
+
   plot + 
-  scale_y_continuous(expand = c(0, 0), # So X-axis set at 0
-                     limits = c(0, 40), 
-                     labels = scales::label_percent(scale = 1),
-                     sec.axis = sec_axis(~ .,
-                                         breaks = seq(0, 50, by = 10),  # Specify breaks for the secondary axis
-                                         name = "Percent of TB cases with confirmed Xpert result", # Format labels as percentages
-                                         labels = scales::label_percent(scale = 1)
-                     )
-  ) + 
+    scale_y_continuous(expand = c(0, 0), # So X-axis set at 0
+                      limits = c(0, 300),
+                      sec.axis = sec_axis(~./(300/40), # Create secondary axis that is set based off of incidence axis
+                                          name = "Percent of TB cases with confirmed Xpert result", 
+                                          labels = scales::label_percent(scale = 1) # Format labels as percentages
+                      )
+    ) +  
     scale_x_date(
       date_breaks = "1 year",  # Set breaks to 1 year
       date_labels = "%b %Y"  # Format labels as year
     ) + 
     xlab("Time (Quarter)") + 
-    ylab("Percent RR-TB positive") + 
+    ylab("Incidence per 1,000 TB cases") + 
     theme_bw() + 
     theme(
       axis.text.x  = element_text(size = 10), 
@@ -105,55 +109,54 @@ set_base_aes_specs <- function(plot) {
 
 
 # Plot in ggplot ----------------------------------------------------------
-plot_observed(quarter = 1, "new", "prev")
-
-fig_observed_trends <- plot_observed(quater) %>% set_base_aes_specs() 
 
 
-fig_tt <- plot_observed(quarter = 1, "new", "prev") %>%  
-  plot_model(agg_level = "nat_qrt", model_name = "tt_2014-2019") %>% 
-  plot_model(agg_level = "nat_qrt", model_name = "tt_2015-2019") %>% 
+fig_observed_trends <- plot_observed("new", "prev") %>% 
   set_base_aes_specs() + 
-  scale_linetype_manual(name = "Model", 
-                        labels = c("tt_2014-2019" = "Time trend: 2014-2019", 
-                                   "tt_2015-2019" = "Time trend: 2015-2019 (Q12 dropped)"),
-                        values=c(1, 2, 3))
+  ggtitle ("Observed RR-TB testing and trends")
 
 
-fig_tt_sp <- plot_observed(quarter = 1, "new", "prev") %>%  
-  plot_model(agg_level = "nat_qrt", model_name = "tt_2014-2019") %>% 
+
+fig_sp <- plot_observed(quarter = "2014-01-01", "new", "prev") %>%  
   plot_model(agg_level = "nat_qrt", model_name = "sp_2014-2019") %>% 
   plot_model(agg_level = "nat_qrt", model_name = "sp_2015-2019") %>% 
   set_base_aes_specs() + 
   scale_linetype_manual(name = "Model", 
-                        labels = c("tt_2014-2019" = "Time trend: 2014-2019 (For reference)", 
-                                   "sp_2014-2019" = "Spatial: 2014-2019", 
-                                   "sp_2015-2019" = "Spatial: 2015-2019 (Q12 dropped)"),
-                        values=c("tt_2014-2019" = "solid", 
-                                 "sp_2014-2019" = "dashed",
-                                 "sp_2015-2019" = "dotted"
-                                 ))
+                        labels = c("sp_2014-2019" = "2014-2019", 
+                                   "sp_2015-2019" = "2015-2019 (Q12 dropped)"),
+                        values=c("sp_2014-2019" = "solid",
+                                 "sp_2015-2019" = "dashed"
+                                 )) + 
+  ggtitle ("Spatial models")
   
 
 # Sensitivity analyses 
-plot_observed(quarter = 4) %>%  
-  plot_model(agg_level = "nat_qrt", model_name = "tt_2015-2019") %>%
-  plot_model(agg_level = "nat_qrt", model_name = "se1_tt_2015-2019") %>% 
+fig_se1 <- 
+  plot_observed(quarter = "2015-01-01", "new", "prev") %>%
+  plot_model(agg_level = "nat_qrt", model_name = "sp_2015-2019") %>%
+  plot_model(agg_level = "nat_qrt", model_name = "se1_sp_2015-2019") %>% 
   set_base_aes_specs() + 
   scale_linetype_manual(name = "Model", 
-                        labels = c("tt_2015-2019" = "Time trend", 
-                                   "se1_tt_2015-2019" = "Time trend (patient covs)"),
-                        values=c("tt_2014-2019" = "solid", 
-                                 "sp_2014-2019" = "dashed",
-                                 "sp_2015-2019" = "dotted"
-                        ))
+                        labels = c("sp_2015-2019" = "Spatial (Ref)",
+                          "se1_sp_2015-2019" = "Spatial (Sens: Patient covs)"),
+                        values=c("sp_2015-2019" = "solid", 
+                          "se1_sp_2015-2019" = "dashed"
+                        )) + 
+  ggtitle ("Sensitivity: Additional patient covariates")
 
 
-plot_observed() %>%  
-  plot_model(agg_level = "nat_qrt", case_type = "new", model_name = "sp_2015-2019") %>%
-  plot_model(agg_level = "nat_qrt", case_type = "new", model_name = "se1_sp_2015-2019") %>% 
-  plot_model(agg_level = "nat_qrt", case_type = "new", model_name = "se2_sp_2015-2019") %>% 
-  set_base_aes_specs()
+fig_se2 <- plot_observed(quarter = "2015-01-01", "new", "prev") %>%  
+  plot_model(agg_level = "nat_qrt", model_name = "sp_2015-2019") %>%
+  plot_model(agg_level = "nat_qrt", model_name = "se2_sp_2015-2019") %>% 
+  set_base_aes_specs() + 
+  scale_linetype_manual(name = "Model", 
+                        labels = c("sp_2015-2019" = "Spatial (Ref)", 
+                                   "se2_sp_2015-2019" = "Spatial (Sens: Interaction)"),
+                        values=c("sp_2015-2019" = "solid", 
+                                 "se2_sp_2015-2019" = "dashed"
+                        )) + 
+  ggtitle ("Sensitivity: Time*Patient Covariates")
+
   
 
   
@@ -165,8 +168,10 @@ plot_observed() %>%
 
 # Save plots --------------------------------------------------------------
 ggsave(fig_observed_trends, filename = "output/figures_and_tables/fig_observed_trends.png", width = 14, height = 6)
-ggsave(fig_national_trends_TT, filename = "output/figures_and_tables/fig_national_trends_TT.png", width = 14, height = 6)
-ggsave(fig_national_trends_TT_SP, filename = "output/figures_and_tables/fig_national_trends_TT_SP.png", width = 14, height = 6)
+# ggsave(fig_tt, filename = "output/figures_and_tables/fig_tt.png", width = 14, height = 6)
+ggsave(fig_sp, filename = "output/figures_and_tables/fig_sp.png", width = 14, height = 6)
+ggsave(fig_se1, filename = "output/figures_and_tables/fig_se1.png", width = 14, height = 6)
+ggsave(fig_se2, filename = "output/figures_and_tables/fig_se2.png", width = 14, height = 6)
 
 
 

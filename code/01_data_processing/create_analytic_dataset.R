@@ -1,0 +1,34 @@
+# Author: Sarah Baum
+# Created: 2023-08-21
+# Updated: 2024-04-06
+
+# Description/Decisions: Takes sinan and prepare it for model analysis
+
+create_analytic_dataset <- function(first_quarter, last_quarter, covariates, tratamento) {
+  
+  mdf <- sinan_tmp %>%
+    filter(diag_qrt >= first_quarter & diag_qrt < last_quarter) %>%
+    select(all_of(covariates)) %>%
+    filter(!is.na(lat)) %>% 
+    filter(sex != "missing")
+  
+  ### Order the dates in ascending order
+  sorted_dates <- sort(unique(mdf$diag_qrt))
+  
+  ### Create a named vector to store the rank for each date
+  time <- setNames(1:length(sorted_dates), format(sorted_dates, "%Y-%m-%d"))
+  dates <- cbind(as.data.frame(sorted_dates), time)
+  mdf <- left_join(mdf, dates, by = c("diag_qrt" = "sorted_dates"))
+  mdf$time <- as.numeric(as.character(mdf$time))
+  
+
+  if (tratamento == "new") {
+    mdf_new_ind <- mdf %>%
+      filter(tratamento == "1")
+    
+  } else {
+    mdf_prev_ind <- mdf %>%
+      filter(tratamento %in% c("2", "3")) %>%
+      mutate(tratamento = if_else(tratamento == "2", "relapse", "reentry") %>% as.factor())
+  }
+}
