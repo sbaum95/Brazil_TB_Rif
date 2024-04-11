@@ -22,7 +22,8 @@ fig_bias <- ggplot() +
                   mutate(bias_lci = proj_lci/obs_RR, 
                          bias_hci = proj_hci/obs_RR), 
                 aes(x = diag_qrt, ymin = bias_lci, ymax = bias_hci, color = case_type), width = 30) + 
-  
+  scale_y_continuous(expand = c(0,0), 
+                     limits = c(0,15)) + 
   scale_x_date(
     date_breaks = "1 year",  # Set breaks to 1 year
     date_labels = "%b %Y"  # Format labels as year
