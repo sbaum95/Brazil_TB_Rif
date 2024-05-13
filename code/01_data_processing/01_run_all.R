@@ -6,8 +6,27 @@
 
 source("code/dependencies.R")
 
+# Load sinan and set covariates  ----------------------------------------------------
 
-# Load and clean sinan ----------------------------------------------------
+sinan <- foreign::read.dbf("data/base abril 24 si.dbf") 
+
+covariates_to_pull <- c(
+  "state", "state_nm", "id_mn_resi", "diag_qrt", "diag_yr", "tested", "result", 
+  "sex", "age_cat", "tratamento", "hiv_status",  "lat", "lon",
+  "pop_imig", "pop_rua", "pop_liber", "agravtabac", "agravalcoo", "agravdroga", 
+  "agravdiabe", "cs_escol_n"
+  # "health_unit"
+)
+
+years_to_pull <- c(2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023)
+
+
+file_version <- "2024"
+
+
+
+
+# Clean sinan ----------------------------------------------------
 
 tictoc::tic()
 
@@ -28,26 +47,16 @@ source("code/01_data_processing/create_analytic_dataset.R")
 # Create dataset for new cases
 mdf_new_ind <- create_analytic_dataset(
   first_quarter = "2014-01-01",
-  last_quarter = "2020-01-01",
-  covariates = c(
-    "state", "state_nm", "id_mn_resi", "diag_qrt", "diag_yr", "tested", "result", 
-    "sex", "age_cat", "tratamento", "hiv_status", "health_unit", "lat", "lon",
-    "pop_imig", "pop_rua", "pop_liber", "agravtabac", "agravalcoo", "agravdroga", 
-    "agravdiabe", "cs_escol_n"
-  ),
+  last_quarter = "2023-10-01",
+  covariates = covariates_to_pull,
   tratamento = "new"
 )
 
 # Create dataset for previous cases
 mdf_prev_ind <- create_analytic_dataset(
   first_quarter = "2014-01-01",
-  last_quarter = "2020-01-01",
-  covariates = c(
-    "state", "state_nm", "id_mn_resi", "diag_qrt", "diag_yr", "tested", "result", 
-    "sex", "age_cat", "tratamento", "hiv_status", "health_unit", "lat", "lon",
-    "pop_imig", "pop_rua", "pop_liber", "agravtabac", "agravalcoo", "agravdroga", 
-    "agravdiabe", "cs_escol_n"
-  ),
+  last_quarter = "2023-10-01",
+  covariates = covariates_to_pull,
   tratamento = "prev"
 )
 
@@ -57,6 +66,9 @@ tictoc::toc()
 
 
 # write files --------------------------------------------------------------
-save(sinan_tmp, file = "data/sinan_tmp.Rdata")
-save(mdf_new_ind, file = "data/mdf_new_ind_tmp.Rdata")
-save(mdf_prev_ind, file = "data/mdf_prev_ind_tmp.Rdata")
+save(sinan_tmp, file = paste0("data/sinan_tmp_", file_version, ".Rdata"))
+save(mdf_new_ind, file = paste0("data/mdf_new_ind_tmp_", file_version, ".Rdata"))
+save(mdf_prev_ind, file = paste0("data/mdf_prev_ind_tmp_", file_version, ".Rdata"))
+
+
+
