@@ -3,53 +3,71 @@
 # Updated: 2024-04-05
 # Description: Loads sinan data and cleans
 
-
+source("code/dependencies.R")
 
 load_and_clean_sinan <- function() {
   # Load sinan --------------------------------------------------------------
-  sinan <- read_dta("data/fim_abr_2023_no name.dta")
+  
+  names(sinan) <- tolower(names(sinan))
+    
+
+  # sinan <- read_dta("data/fim_abr_2023_no name.dta")
 
 
   sinan_tmp <- sinan %>%
     # Create quarter and years based on date when patient was diagnosed with TB
     mutate(
-      not_yr = as.Date(nu_ano, format = "%Y"),
-      dt_nasc = as.Date(dt_nasc, format = "%Y-%m-%d"),
-      dt_diag = as.Date(dt_diag, format = "%Y-%m-%d"),
-      diag_yr = floor_date(as_date(dt_diag), "year"),
+      # not_yr = as.Date(as.character(nu_ano), format = "year"), 
+      # dt_nasc = as.Date(dt_nasc, format = "%Y-%m-%d"), # Not in current version of sinan (April 2024)
+      dt_diag = as.Date(as.character(dt_diag), format = "%Y%m%d"),
+      diag_yr = floor_date(as_date(dt_diag), "year"), 
       diag_qrt = floor_date(as_date(dt_diag), "quarter"),
       tratamento = as.factor(tratamento),
       sg_uf = if_else(sg_uf == "" | sg_uf == "9", NA, sg_uf) %>% as.factor(),
       id_mn_resi = if_else(id_mn_resi == "" | id_mn_resi == "9", NA, id_mn_resi) %>% as.factor(),
       sg_uf_not = if_else(sg_uf_not == "" | sg_uf_not == "9", NA, sg_uf_not) %>% as.factor(),
-      id_municip = if_else(id_municip == "" | id_municip == "9", NA, id_municip) %>% as.factor(),
+      # id_municip = if_else(id_municip == "" | id_municip == "9", NA, id_municip) %>% as.factor(),
       pop_imig = as.factor(pop_imig)
-    ) %>%
-    rename(id_mn_not = id_municip)
+    )  %>% rename(id_mn_not = id_municip)
+  
+# Filter to relevant years
+sinan_tmp$diag_yr <- as.numeric(year(sinan_tmp$diag_yr)) # only run this line once - otw origin error
+
+sinan_tmp <- sinan_tmp %>% 
+    filter(as.numeric(diag_yr) %in% years_to_pull)
 
 
 
   # Add type of health unit data --------------------------------------------
+  ## Only run if health unit is listed in covariates to pull
+  if ("health_unit" %in% covariates_to_pull){
+    
   source(here::here("code/01_data_processing/clean_health_unit_type.R"))
   
-  sinan_tmp$diag_yr <- as.numeric(year(sinan_tmp$diag_yr)) # only run this line once - otw origin error
-  
-  sinan_tmp <- load_health_unit_type(years = c("2019", "2018", "2017", "2016", "2015", "2014"), sinan_tmp = sinan_tmp)
-  
+
+  sinan_tmp <- load_health_unit_type(years = c("2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014"), sinan_tmp = sinan_tmp)
+  }
   
   
   # Impute missing state/mun ------------------------------------------------
   # Impute missing state and municipality with location of health unit (117 patients have a missing  state, 119 missing municip)
- sinan_tmp <- sinan_tmp %>%
-  mutate(
-    id_mn_resi_clean = if_else(is.na(id_mn_resi) & !is.na(id_mn_unidade), id_mn_unidade,
-      if_else(is.na(id_mn_resi) & is.na(id_mn_unidade), id_mn_not, id_mn_resi)
-    ),
-    sg_uf_clean = if_else(is.na(sg_uf) & !is.na(sg_uf_unidade), sg_uf_unidade,
-      if_else(is.na(sg_uf) & is.na(sg_uf_unidade), sg_uf_not, sg_uf)
-    )
-  )
+ # sinan_tmp <- sinan_tmp %>%
+ #  mutate(
+ #    id_mn_resi_clean = if_else(is.na(id_mn_resi) & !is.na(id_mn_unidade), id_mn_unidade,
+ #      if_else(is.na(id_mn_resi) & is.na(id_mn_unidade), id_mn_not, id_mn_resi)
+ #    ),
+ #    sg_uf_clean = if_else(is.na(sg_uf) & !is.na(sg_uf_unidade), sg_uf_unidade,
+ #      if_else(is.na(sg_uf) & is.na(sg_uf_unidade), sg_uf_not, sg_uf)
+ #    )
+ #  )
 
+sinan_tmp <- sinan_tmp %>%
+  # Impute missing municipality of residence with either municipality of treating health unit or notifying health unit
+  mutate(id_mn_resi_clean = if_else(is.na(as.factor(id_mn_resi)) & !is.na(as.factor(id_munic_a)), as.factor(id_munic_a), 
+                                    if_else(is.na(as.factor(id_mn_resi)) & is.na(as.factor(id_munic_a)), as.factor(id_mn_not), as.factor(id_mn_resi))), 
+         # Impute missing state of residence with either municipality of treating health unit or notifying health unit
+         sg_uf_clean = if_else(is.na(sg_uf) & !is.na(sg_uf_at), sg_uf_at,
+                               if_else(is.na(sg_uf) & is.na(sg_uf_at), sg_uf_not, sg_uf)))
   
   # Add municipality name and population ------------------------------------
 
@@ -95,10 +113,10 @@ load_and_clean_sinan <- function() {
   sinan_tmp <- sinan_tmp %>%
     # Create age two ways use dt_nasc and nu_idade
     mutate(
-      age_nasc = floor(as.numeric((dt_diag - dt_nasc) / 365)),
+      # age_nasc = floor(as.numeric((dt_diag - dt_nasc) / 365)),
       age_idade = if_else(nu_idade_n > 4000, nu_idade_n - 4000,
         if_else(nu_idade_n < 4000, 1,
-          if_else(nu_idade_n %in% c(4000, 3000, 2000, 100), 1, -1)
+          if_else(nu_idade_n %in% c(4000, 3000, 2000, 1000), 1, -1)
         )
       )
     )
@@ -106,53 +124,54 @@ load_and_clean_sinan <- function() {
 
 
   # Create age category based on date of birth
-  sinan_tmp$age_cat_nasc <- case_when(
-    sinan_tmp$age_nasc >= 0 & sinan_tmp$age_nasc < 5 ~ "0-4",
-    sinan_tmp$age_nasc >= 5 & sinan_tmp$age_nasc < 15 ~ "5-14",
-    sinan_tmp$age_nasc >= 15 & sinan_tmp$age_nasc < 25 ~ "15-24",
-    sinan_tmp$age_nasc >= 25 & sinan_tmp$age_nasc < 35 ~ "25-34",
-    sinan_tmp$age_nasc >= 35 & sinan_tmp$age_nasc < 45 ~ "35-44",
-    sinan_tmp$age_nasc >= 45 & sinan_tmp$age_nasc < 55 ~ "45-54",
-    sinan_tmp$age_nasc >= 55 & sinan_tmp$age_nasc < 65 ~ "55-64",
-    sinan_tmp$age_nasc >= 65 ~ "65+"
-  )
+  # sinan_tmp$age_cat_nasc <- case_when(
+  #   sinan_tmp$age_nasc >= 0 & sinan_tmp$age_nasc < 5 ~ "0-4",
+  #   sinan_tmp$age_nasc >= 5 & sinan_tmp$age_nasc < 15 ~ "5-14",
+  #   sinan_tmp$age_nasc >= 15 & sinan_tmp$age_nasc < 25 ~ "15-24",
+  #   sinan_tmp$age_nasc >= 25 & sinan_tmp$age_nasc < 35 ~ "25-34",
+  #   sinan_tmp$age_nasc >= 35 & sinan_tmp$age_nasc < 45 ~ "35-44",
+  #   sinan_tmp$age_nasc >= 45 & sinan_tmp$age_nasc < 55 ~ "45-54",
+  #   sinan_tmp$age_nasc >= 55 & sinan_tmp$age_nasc < 65 ~ "55-64",
+  #   sinan_tmp$age_nasc >= 65 ~ "65+"
+  # )
 
 
   # Create age category based on observed age variable (What NTP says is more reliable)
-  sinan_tmp$age_cat_idade <- case_when(
-    sinan_tmp$age_idade >= 0 & sinan_tmp$age_idade < 5 ~ "0-4",
-    sinan_tmp$age_idade >= 5 & sinan_tmp$age_idade < 15 ~ "5-14",
-    sinan_tmp$age_idade >= 15 & sinan_tmp$age_idade < 25 ~ "15-24",
-    sinan_tmp$age_idade >= 25 & sinan_tmp$age_idade < 35 ~ "25-34",
-    sinan_tmp$age_idade >= 35 & sinan_tmp$age_idade < 45 ~ "35-44",
-    sinan_tmp$age_idade >= 45 & sinan_tmp$age_idade < 55 ~ "45-54",
-    sinan_tmp$age_idade >= 55 & sinan_tmp$age_idade < 65 ~ "55-64",
-    sinan_tmp$age_idade >= 65 ~ "65+"
-  )
-
-
-  sinan_tmp <- sinan_tmp %>%
-    mutate(
-      age =
-      # Nasc and idade are in agreement or they are off by a little, then go with idade
-        if_else(abs(age_nasc - age_idade) <= 5, age_idade,
-          # NTP said these idade codes are most likely children, make sure that is the case and then go with idade
-          if_else(nu_idade_n %in% c(1000, 2000, 3000, 4000) & (cs_escol_n %in% c("0", "1-3") & agravalcoo != 1 & agravtabac != 1 & pop_liber != 1), age_idade,
-            # If the last two digits of nu_idade == age_nasc, then use age_nasc (maybe they messed up 4 vs. 3)
-            if_else(age_nasc == nu_idade_n %% 100, age_nasc,
-              # If idade is not 4 digits, and it == age_nasc, then use age_nasc
-              if_else(nchar(as.character(nu_idade_n)) == 2, nu_idade_n,
-                if_else(dt_nasc > dt_diag, NA, age_idade)
-              )
-            )
-          )
-        )
-    )
-
+  # sinan_tmp$age_cat_idade <- case_when(
+  #   sinan_tmp$age_idade >= 0 & sinan_tmp$age_idade < 5 ~ "0-4",
+  #   sinan_tmp$age_idade >= 5 & sinan_tmp$age_idade < 15 ~ "5-14",
+  #   sinan_tmp$age_idade >= 15 & sinan_tmp$age_idade < 25 ~ "15-24",
+  #   sinan_tmp$age_idade >= 25 & sinan_tmp$age_idade < 35 ~ "25-34",
+  #   sinan_tmp$age_idade >= 35 & sinan_tmp$age_idade < 45 ~ "35-44",
+  #   sinan_tmp$age_idade >= 45 & sinan_tmp$age_idade < 55 ~ "45-54",
+  #   sinan_tmp$age_idade >= 55 & sinan_tmp$age_idade < 65 ~ "55-64",
+  #   sinan_tmp$age_idade >= 65 ~ "65+"
+  # )
+  # 
+  # 
+  # sinan_tmp <- sinan_tmp %>%
+  #   mutate(
+  #     age =
+  #     # Nasc and idade are in agreement or they are off by a little, then go with idade
+  #       if_else(abs(age_nasc - age_idade) <= 5, age_idade,
+  #         # NTP said these idade codes are most likely children, make sure that is the case and then go with idade
+  #         if_else(nu_idade_n %in% c(1000, 2000, 3000, 4000) & (cs_escol_n %in% c("0", "1-3") & agravalcoo != 1 & agravtabac != 1 & pop_liber != 1), age_idade,
+  #           # If the last two digits of nu_idade == age_nasc, then use age_nasc (maybe they messed up 4 vs. 3)
+  #           if_else(age_nasc == nu_idade_n %% 100, age_nasc,
+  #             # If idade is not 4 digits, and it == age_nasc, then use age_nasc
+  #             if_else(nchar(as.character(nu_idade_n)) == 2, nu_idade_n,
+  #               if_else(dt_nasc > dt_diag, NA, age_idade)
+  #             )
+  #           )
+  #         )
+  #       )
+  #   )
+  # 
 
   # Remove 0-4 YOs who have schooling
-  sinan_tmp <- sinan_tmp %>% mutate(age = if_else(age <= 4 & cs_escol_n %in% c("4", "5", "6", "7", "8"), NA, age)) #| agravalcoo == 1 | agravtabac == 1 | pop_liber == 1), NA,
-
+  # sinan_tmp <- sinan_tmp %>% mutate(age = if_else(age <= 4 & cs_escol_n %in% c("4", "5", "6", "7", "8"), NA, age)) #| agravalcoo == 1 | agravtabac == 1 | pop_liber == 1), NA,
+  sinan_tmp <- sinan_tmp %>% mutate(age = if_else(age_idade <= 4 & cs_escol_n %in% c("4", "5", "6", "7", "8"), NA, age_idade)) #| agravalcoo == 1 | agravtabac == 1 | pop_liber == 1), NA,
+  
 
   # Finalize age categories
   sinan_tmp$age_cat <- case_when(
@@ -181,92 +200,190 @@ load_and_clean_sinan <- function() {
 
 
   # Clean covariates --------------------------------------------------------
-
+if ("health_unit" %in% covariates_to_pull) { 
   sinan_tmp <- sinan_tmp %>%
-    mutate(
-
-      # Sex
-      sex = if_else(cs_sexo == "M", "male",
-        if_else(cs_sexo == "F", "female", "missing")
-      ) %>% as.factor() %>% relevel(ref = "female"),
-
-      # HIV status
-      hiv_status = if_else(hiv == "1", "positive",
-        if_else(hiv == "2", "negative",
-          if_else(agravaids == "1", "positive",
-            if_else(agravaids == "2", "negative", "missing")
-          )
-        )
-      ) %>% as.factor() %>% relevel(ref = "negative"),
-
-      # Age category
-      age_cat = if_else(is.na(age_cat), "missing", age_cat) %>% as.factor() %>% relevel(ref = "25-34"),
-
-      # Health Unit
-      health_unit = if_else(is.na(health_unit), "missing", health_unit) %>% as.factor(),
-
-      # Received Xpert tested
-      tested = if_else(test_molec %in% c("1", "2"), "tested", "not tested") %>% as.factor(),
-
-      # Xpert result
-      result = if_else(test_molec %in% c("2"), "positive",
-        if_else(test_molec %in% c("1"), "negative", "missing")
-      ) %>% as.factor(),
-
-      # Homelessness
-      pop_rua = if_else(pop_rua == 1, "yes",
-        if_else(pop_rua == 2, "no", "missing")
-      ) %>% as.factor() %>% relevel(ref = "no"),
-
-      # Incarcerated
-      pop_liber = if_else(pop_liber == 1, "yes",
-        if_else(pop_liber == 2, "no", "missing")
-      ) %>% as.factor() %>% relevel(ref = "no"),
-
-      # Smoking
-      agravtabac = if_else(agravtabac == 1, "yes",
-        if_else(agravtabac == 2, "no", "missing")
-      ) %>% as.factor() %>% relevel(ref = "no"),
-
-      # Alcohol
-      agravalcoo = if_else(agravalcoo == 1, "yes",
-        if_else(agravalcoo == 2, "no", "missing")
-      ) %>% as.factor() %>% relevel(ref = "no"),
-
-      # Ilicit drug use
-      agravdroga = if_else(agravdroga == 1, "yes",
-        if_else(agravdroga == 2, "no", "missing")
-      ) %>% as.factor() %>% relevel(ref = "no"),
-
-      # Diabetes
-      agravdiabe = if_else(agravdiabe == 1, "yes",
-        if_else(agravdiabe == 2, "no", "missing")
-      ) %>% as.factor() %>% relevel(ref = "no"),
-
-      # Immigration status
-      pop_imig = if_else(pop_imig == 1, "yes",
-        if_else(pop_imig == 2, "no", "missing") # Includes values coded as 3?
-      ) %>% as.factor() %>% relevel(ref = "no")
-    ) %>% 
+  mutate(
     
-    rename(state = sg_uf_clean)
+    # Sex
+    sex = if_else(cs_sexo == "M", "male",
+                  if_else(cs_sexo == "F", "female", "missing")
+    ) %>% as.factor() %>% relevel(ref = "female"),
+    
+    # HIV status
+    hiv_status = if_else(hiv == "1", "positive",
+                         if_else(hiv == "2", "negative",
+                                 if_else(agravaids == "1", "positive",
+                                         if_else(agravaids == "2", "negative", NA)
+                                 ))), 
+    hiv_status = if_else(is.na(hiv_status), "missing", hiv_status) %>% as.factor() %>% relevel(ref = "negative"),
+  
+    
+    # Age category
+    age_cat = if_else(is.na(age_cat), "missing", age_cat) %>% as.factor() %>% relevel(ref = "25-34"),
+    
+    # Health Unit
+    health_unit = if_else(is.na(health_unit), "missing", health_unit) %>% as.factor(),
+    
+    # Received Xpert tested
+    tested = if_else(test_molec %in% c("1", "2"), "tested", "not tested") %>% as.factor(),
+    
+    # Xpert result
+    result = if_else(test_molec %in% c("2"), "positive",
+                     if_else(test_molec %in% c("1"), "negative", "missing")
+    ) %>% as.factor(),
+    
+    
+    
+    # Homelessness
+    pop_rua = if_else(pop_rua == 1, "yes",
+                      if_else(pop_rua == 2, "no", NA)), 
+    
+    pop_rua = ifelse(is.na(pop_rua), "missing", pop_rua) %>% as.factor() %>% relevel(ref = "no"),
+  
+    
+  
+    # Incarcerated
+    pop_liber = if_else(pop_liber == 1, "yes",
+                        if_else(pop_liber == 2, "no", NA)), 
+  
+    pop_liber = ifelse(is.na(pop_liber), "missing", pop_liber) %>% as.factor() %>% relevel(ref = "no"), 
+    
+    
+
+    # Smoking
+    agravtabac = if_else(agravtabac == 1, "yes",
+                         if_else(agravtabac == 2, "no", NA)), 
+    
+    agravtabac = ifelse(is.na(agravtabac), "missing", agravtabac) %>% as.factor() %>% relevel(ref = "no"), 
+
+    
+    # Alcohol
+    agravalcoo = if_else(agravalcoo == 1, "yes",
+                         if_else(agravalcoo == 2, "no", NA)), 
+    
+    agravalcoo = ifelse(is.na(agravalcoo), "missing", agravalcoo) %>% as.factor() %>% relevel(ref = "no"), 
+
+    
+    # Ilicit drug use
+    agravdroga = if_else(agravdroga == 1, "yes",
+                         if_else(agravdroga == 2, "no", NA)), 
+    
+    agravdroga = ifelse(is.na(agravdroga), "missing", agravdroga) %>% as.factor() %>% relevel(ref = "no"), 
+    
+    # Diabetes
+    agravdiabe = if_else(agravdiabe == 1, "yes",
+                         if_else(agravdiabe == 2, "no", NA)), 
+    
+    agravdiabe = ifelse(is.na(agravdiabe), "missing", agravdiabe) %>% as.factor() %>% relevel(ref = "no"), 
+
+    # Immigration status
+    pop_imig = if_else(pop_imig == 1, "yes",
+                       if_else(pop_imig == 2, "no", NA)),  # Includes values coded as 3?
+    
+    pop_imig  = ifelse(is.na(pop_imig ), "missing", pop_imig ) %>% as.factor() %>% relevel(ref = "no")) %>%  
+
+  
+  rename(state = sg_uf_clean)
+}
+  
+  
+  
+sinan_tmp <- sinan_tmp %>%
+  mutate(
+    
+    # Sex
+    sex = if_else(cs_sexo == "M", "male",
+                  if_else(cs_sexo == "F", "female", "missing")
+    ) %>% as.factor() %>% relevel(ref = "female"),
+    
+    # HIV status
+    hiv_status = if_else(hiv == "1", "positive",
+                         if_else(hiv == "2", "negative",
+                                 if_else(agravaids == "1", "positive",
+                                         if_else(agravaids == "2", "negative", NA)
+                                 ))), 
+    hiv_status = if_else(is.na(hiv_status), "missing", hiv_status) %>% as.factor() %>% relevel(ref = "negative"),
+    
+    
+    # Age category
+    age_cat = if_else(is.na(age_cat), "missing", age_cat) %>% as.factor() %>% relevel(ref = "25-34"),
+    
+    # Received Xpert tested
+    tested = if_else(test_molec %in% c("1", "2"), "tested", "not tested") %>% as.factor(),
+    
+    # Xpert result
+    result = if_else(test_molec %in% c("2"), "positive",
+                     if_else(test_molec %in% c("1"), "negative", "missing")
+    ) %>% as.factor(),
+    
+    
+    
+    # Homelessness
+    pop_rua = if_else(pop_rua == 1, "yes",
+                      if_else(pop_rua == 2, "no", NA)), 
+    
+    pop_rua = ifelse(is.na(pop_rua), "missing", pop_rua) %>% as.factor() %>% relevel(ref = "no"),
+    
+    
+    
+    # Incarcerated
+    pop_liber = if_else(pop_liber == 1, "yes",
+                        if_else(pop_liber == 2, "no", NA)), 
+    
+    pop_liber = ifelse(is.na(pop_liber), "missing", pop_liber) %>% as.factor() %>% relevel(ref = "no"), 
+    
+    
+    
+    # Smoking
+    agravtabac = if_else(agravtabac == 1, "yes",
+                         if_else(agravtabac == 2, "no", NA)), 
+    
+    agravtabac = ifelse(is.na(agravtabac), "missing", agravtabac) %>% as.factor() %>% relevel(ref = "no"), 
+    
+    
+    # Alcohol
+    agravalcoo = if_else(agravalcoo == 1, "yes",
+                         if_else(agravalcoo == 2, "no", NA)), 
+    
+    agravalcoo = ifelse(is.na(agravalcoo), "missing", agravalcoo) %>% as.factor() %>% relevel(ref = "no"), 
+    
+    
+    # Ilicit drug use
+    agravdroga = if_else(agravdroga == 1, "yes",
+                         if_else(agravdroga == 2, "no", NA)), 
+    
+    agravdroga = ifelse(is.na(agravdroga), "missing", agravdroga) %>% as.factor() %>% relevel(ref = "no"), 
+    
+    # Diabetes
+    agravdiabe = if_else(agravdiabe == 1, "yes",
+                         if_else(agravdiabe == 2, "no", NA)), 
+    
+    agravdiabe = ifelse(is.na(agravdiabe), "missing", agravdiabe) %>% as.factor() %>% relevel(ref = "no"), 
+    
+    # Immigration status
+    pop_imig = if_else(pop_imig == 1, "yes",
+                       if_else(pop_imig == 2, "no", NA)),  # Includes values coded as 3?
+    
+    pop_imig  = ifelse(is.na(pop_imig ), "missing", pop_imig ) %>% as.factor() %>% relevel(ref = "no")) %>%  
+  
+  
+  rename(state = sg_uf_clean)
 
 
 
-
-  ## Education
-  sinan_tmp$cs_escol_n <- case_when(
-    sinan_tmp$cs_escol_n %in% c(" 0", "0", "00") ~ "0",
-    sinan_tmp$cs_escol_n %in% c(" 1", " 2", " 3", "01", "02", "03", "1", "2", "3") ~ "1-3",
-    sinan_tmp$cs_escol_n %in% c(" 4", "04", "4") ~ "4",
-    sinan_tmp$cs_escol_n %in% c(" 5", "05", "5") ~ "5",
-    sinan_tmp$cs_escol_n %in% c(" 6", "06", "6") ~ "6",
-    sinan_tmp$cs_escol_n %in% c(" 7", "07", "7") ~ "7",
-    sinan_tmp$cs_escol_n %in% c(" 8", "08", "8") ~ "8",
-    sinan_tmp$cs_escol_n %in% c("10") ~ "10",
-    sinan_tmp$cs_escol_n %in% c(" 9", "09", "9", "") ~ "missing"
-  ) %>%
-    as.factor()
+  ## Education - Already cleaned
+  # sinan_tmp$cs_escol_n <- case_when(
+  #   sinan_tmp$cs_escol_n %in% c(" 0", "0", "00") ~ "0",
+  #   sinan_tmp$cs_escol_n %in% c(" 1", " 2", " 3", "01", "02", "03", "1", "2", "3") ~ "1-3",
+  #   sinan_tmp$cs_escol_n %in% c(" 4", "04", "4") ~ "4",
+  #   sinan_tmp$cs_escol_n %in% c(" 5", "05", "5") ~ "5",
+  #   sinan_tmp$cs_escol_n %in% c(" 6", "06", "6") ~ "6",
+  #   sinan_tmp$cs_escol_n %in% c(" 7", "07", "7") ~ "7",
+  #   sinan_tmp$cs_escol_n %in% c(" 8", "08", "8") ~ "8",
+  #   sinan_tmp$cs_escol_n %in% c("10") ~ "10",
+  #   sinan_tmp$cs_escol_n %in% c(" 9", "09", "9", "") ~ "missing"
+  # ) %>%
+  #   as.factor()
 
 
 
