@@ -122,52 +122,6 @@ sinan_tmp <- sinan_tmp %>%
     )
 
 
-
-  # Create age category based on date of birth
-  # sinan_tmp$age_cat_nasc <- case_when(
-  #   sinan_tmp$age_nasc >= 0 & sinan_tmp$age_nasc < 5 ~ "0-4",
-  #   sinan_tmp$age_nasc >= 5 & sinan_tmp$age_nasc < 15 ~ "5-14",
-  #   sinan_tmp$age_nasc >= 15 & sinan_tmp$age_nasc < 25 ~ "15-24",
-  #   sinan_tmp$age_nasc >= 25 & sinan_tmp$age_nasc < 35 ~ "25-34",
-  #   sinan_tmp$age_nasc >= 35 & sinan_tmp$age_nasc < 45 ~ "35-44",
-  #   sinan_tmp$age_nasc >= 45 & sinan_tmp$age_nasc < 55 ~ "45-54",
-  #   sinan_tmp$age_nasc >= 55 & sinan_tmp$age_nasc < 65 ~ "55-64",
-  #   sinan_tmp$age_nasc >= 65 ~ "65+"
-  # )
-
-
-  # Create age category based on observed age variable (What NTP says is more reliable)
-  # sinan_tmp$age_cat_idade <- case_when(
-  #   sinan_tmp$age_idade >= 0 & sinan_tmp$age_idade < 5 ~ "0-4",
-  #   sinan_tmp$age_idade >= 5 & sinan_tmp$age_idade < 15 ~ "5-14",
-  #   sinan_tmp$age_idade >= 15 & sinan_tmp$age_idade < 25 ~ "15-24",
-  #   sinan_tmp$age_idade >= 25 & sinan_tmp$age_idade < 35 ~ "25-34",
-  #   sinan_tmp$age_idade >= 35 & sinan_tmp$age_idade < 45 ~ "35-44",
-  #   sinan_tmp$age_idade >= 45 & sinan_tmp$age_idade < 55 ~ "45-54",
-  #   sinan_tmp$age_idade >= 55 & sinan_tmp$age_idade < 65 ~ "55-64",
-  #   sinan_tmp$age_idade >= 65 ~ "65+"
-  # )
-  # 
-  # 
-  # sinan_tmp <- sinan_tmp %>%
-  #   mutate(
-  #     age =
-  #     # Nasc and idade are in agreement or they are off by a little, then go with idade
-  #       if_else(abs(age_nasc - age_idade) <= 5, age_idade,
-  #         # NTP said these idade codes are most likely children, make sure that is the case and then go with idade
-  #         if_else(nu_idade_n %in% c(1000, 2000, 3000, 4000) & (cs_escol_n %in% c("0", "1-3") & agravalcoo != 1 & agravtabac != 1 & pop_liber != 1), age_idade,
-  #           # If the last two digits of nu_idade == age_nasc, then use age_nasc (maybe they messed up 4 vs. 3)
-  #           if_else(age_nasc == nu_idade_n %% 100, age_nasc,
-  #             # If idade is not 4 digits, and it == age_nasc, then use age_nasc
-  #             if_else(nchar(as.character(nu_idade_n)) == 2, nu_idade_n,
-  #               if_else(dt_nasc > dt_diag, NA, age_idade)
-  #             )
-  #           )
-  #         )
-  #       )
-  #   )
-  # 
-
   # Remove 0-4 YOs who have schooling
   # sinan_tmp <- sinan_tmp %>% mutate(age = if_else(age <= 4 & cs_escol_n %in% c("4", "5", "6", "7", "8"), NA, age)) #| agravalcoo == 1 | agravtabac == 1 | pop_liber == 1), NA,
   sinan_tmp <- sinan_tmp %>% mutate(age = if_else(age_idade <= 4 & cs_escol_n %in% c("4", "5", "6", "7", "8"), NA, age_idade)) #| agravalcoo == 1 | agravtabac == 1 | pop_liber == 1), NA,
@@ -187,15 +141,6 @@ sinan_tmp <- sinan_tmp %>%
 
   sinan_tmp$age_cat <- factor(sinan_tmp$age_cat, levels = c("0-4", "5-14", "15-24", "25-34", "35-44", "45-54", "55-64", "65+"))
 
-
-
-
-
-  # Look into incorrectly coded age categories and 0-4 YOs
-  # test <- sinan_tmp %>%
-  #   select(tratamento, age_nasc, nu_idade_n, age_idade, age_cat_nasc, age_cat_idade, cs_escol_n, agravalcoo, agravtabac, pop_liber, age) %>%
-  #   filter((age_cat_nasc != age_cat_idade & age_nasc-age_idade > 1) | (age_cat_nasc == "0-4" & is.na(age_cat_idade)| age_cat_idade == "0-4" & is.na(age_cat_nasc))) %>%
-  #   filter(is.na(age))
 
 
 
