@@ -7,51 +7,51 @@
 source("code/dependencies.R")
 library(rlang)
 
-path <- "output"
-file_ending <- "tmp.Rdata"
+
+# Select analytic datasets to load
+load("data/mdf_new_ind_tmp_2024.Rdata")
+load("data/mdf_prev_ind_tmp_2024.Rdata")
 
 
+# Set up paths to store output
+file_version <- "2024"
 
-# load analytic datasets --------------------------------------------------
-
-load(here::here("data/mdf_new_ind_tmp.Rdata"))
-load(here::here("data/mdf_prev_ind_tmp.Rdata"))
-
-
-# Prep for saving results -------------------------------------------------
+# Select models to run
+models_to_run <- c("sp_2015", "sens_1")
 
 
 # 1. Run models --------------------------------------------------------------
 tictoc::tic()
 
-model_file_name <- paste0("fitted_models_",file_ending)
+# fitted_models <- list() 
 
 source("code/02_run_models/01_run_models.R") # ~ 5 hours for all models
-## Make it so you can control which models you want to be run from here
+
+
+save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
+
 tictoc::toc()
+
 
 
 # 2. Get fitted values ----------------------------------------------------
 tictoc::tic()
 
-fitted_file_name <- paste0("fitted_values_", file_ending)
-
 source("code/02_run_models/02_get_fitted_values.R") # 8 minutes
+
+save(fitted_values, file = paste0("output/fitted_values_", file_version, ".Rdata"))
 
 tictoc::toc()
 
 
 # Get uncertainty intervals -----------------------------------------------
-# load("output/fitted_models_tmp.rdata")
-
-intervals_file_name <- paste0("intervals_", file_ending)
 
 tictoc::tic()
-load(paste0(model_file_name))
 
-source("code/02_run_models/03_get_uncertainity_intervals.R") # 1.5 hours
+source("code/02_run_models/03_get_uncertainity_intervals.R") # 1.5 hours, Not sure why this isn't running through lapply?
 
-# Not sure why this isn't running through lapply?
+save(intervals, file = paste0("output/intervals_", file_version, ".Rdata"))
+
 tictoc::toc()
 
 
@@ -59,17 +59,19 @@ tictoc::toc()
 
 # Compile results ---------------------------------------------------------
 
-## Load data ---------------------------------------------------------------
-load("data/sinan_xpert_tmp.rdata") 
+## Load observed data ---------------------------------------------------------------
+load(paste0("data/sinan_tmp_", file_version,".Rdata"))
 
-sinan_xpert <- sinan_tmp 
+sinan_xpert <- sinan_tmp
 
-results_file_name <- paste0("compiled_results_", file_ending)
+
 
 ## Output compiled results -------------------------------------------------
 tictoc::tic()
 
 source("code/02_run_models/04_compiled_results.R") # 30 minutes
+
+save(compiled_results, file = paste0("output/compiled_results_", file_version, ".Rdata"))
 
 tictoc::toc()
 
