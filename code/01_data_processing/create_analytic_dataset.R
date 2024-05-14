@@ -7,10 +7,9 @@
 create_analytic_dataset <- function(first_quarter, last_quarter, covariates, tratamento) {
   
   mdf <- sinan_tmp %>%
-    filter(diag_qrt >= first_quarter & diag_qrt < last_quarter) %>%
+    filter(diag_qrt >= first_quarter & diag_qrt <= last_quarter) %>%
     select(all_of(covariates)) %>%
-    filter(!is.na(lat)) %>% 
-    filter(sex != "missing")
+    filter(!is.na(lat))
   
   ### Order the dates in ascending order
   sorted_dates <- sort(unique(mdf$diag_qrt))
