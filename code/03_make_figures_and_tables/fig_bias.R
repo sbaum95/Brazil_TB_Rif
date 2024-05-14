@@ -1,23 +1,18 @@
 
-source("code/dependencies.R")
-
-load("output/compiled_results.Rdata")
-
-
 
 fig_bias <- ggplot() + 
   # Quantify bias for new cases
   ## Plot point estimate 
   geom_line(
     data = compiled_results[["nat_qrt"]] %>% 
-      filter(model == "sp_2015-2019") %>% 
+      filter(model == "sp_2015") %>% 
       group_by(case_type) %>% 
       mutate(bias = fitted_RR/obs_RR),
     aes(diag_qrt, bias, color = case_type)) + 
   
   ## Plot error bar 
   geom_errorbar(data = compiled_results[["nat_qrt"]] %>% 
-                  filter(model == "sp_2015-2019") %>% 
+                  filter(model == "sp_2015") %>% 
                   group_by(case_type) %>% 
                   mutate(bias_lci = proj_lci/obs_RR, 
                          bias_hci = proj_hci/obs_RR), 
@@ -42,8 +37,6 @@ fig_bias <- ggplot() +
                      labels=c("New",
                               "Previous"),
                      values=c("black", "red"))
-
-ggsave(fig_bias, filename = "output/figures_and_tables/fig_bias.png", width = 14, height = 6)
 
 
 
