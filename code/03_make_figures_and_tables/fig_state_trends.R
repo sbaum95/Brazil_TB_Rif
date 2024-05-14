@@ -1,29 +1,9 @@
 
-
-
-
-# Load data and results ---------------------------------------------------
-source("code/dependencies.R")
-
-load("output/compiled_results.Rdata")
-
-
-# Load population data by state
-pop_UF <- read_excel("data/Brazil_population_UF.xls", skip = 6) %>%
-  rename(
-    pop_2010 = "...2",
-    state = "...1"
-  ) %>%
-  select(state, pop_2010) %>%
-  filter(!is.na(state)) %>%
-  filter(!state %in% c("Brasil", "Sudeste", "Centro-Oeste", "Norte", "Nordeste", "Sul"))
-
-
-
 # Create function to get plots by state-quarter ---------------------------
 fig_state <- function(state_list, model_name, case_type1 = NULL, case_type2 = NULL) {
+  
   data <- compiled_results[["state_qrt"]] %>%
-    left_join(., pop_UF, by = c("state_nm" = "state")) %>%
+    # left_join(., pop_UF, by = c("state_nm" = "state")) %>%
     mutate(tb_inc = (total_TB_cases / pop_2010) * 100000) %>%
     filter(state_nm %in% state_list) %>%
     filter(model == model_name) %>%
@@ -62,20 +42,21 @@ fig_state <- function(state_list, model_name, case_type1 = NULL, case_type2 = NU
 
 set_base_aes_specs <- function(by_state) {
   by_state +
+    scale_y_continuous(expand = c(0,0)) + 
 
     scale_x_date(
       date_breaks = "1 year", # Set breaks to 1 year
-      date_labels = "%b %Y" # Format labels as year
+      date_labels = "%Y" # Format labels as year
     ) +
     xlab("Quarter") +
     ylab("Incidence per 100,000 population") +
     theme_bw() +
     theme(
-      # axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
       axis.text.x = element_text(size = 7),
       axis.text.y = element_text(size = 9),
       legend.text = element_text(size = 9),
-      title = element_text(size = 10)
+      title = element_text(size = 10), 
+      strip.text = element_text(size = 10)
     ) +
     scale_size(
       range = c(0.5, 5)
@@ -94,8 +75,8 @@ set_base_aes_specs <- function(by_state) {
 
 # Execute function --------------------------------------------------------
 state_list_new <- compiled_results[["state_yr"]] %>%
-  left_join(., pop_UF, by = c("state_nm" = "state")) %>%
-  filter(year == 2019 & case_type == "new" & model == "sp_2015-2019") %>%
+  # left_join(., pop_UF, by = c("state_nm" = "state")) %>%
+  filter(year == 2023 & case_type == "new" & model == "sp_2015") %>%
   mutate(
     tb_inc = (total_TB_cases / pop_2010) * 100000,
     rr_inc = (fitted_RR / pop_2010) * 100000
@@ -107,14 +88,14 @@ state_list_new <- compiled_results[["state_yr"]] %>%
   pull()
 
 
-fig_state_new_sp <- fig_state(state_list = state_list_new, model_name = "sp_2015-2019", case_type1 = "new", case_type2 = NULL) %>%
+fig_state_new_sp <- fig_state(state_list = state_list_new, model_name = "sp_2015", case_type1 = "new", case_type2 = NULL) %>%
   set_base_aes_specs()
 
 
 state_list_prev <- compiled_results[["state_yr"]] %>%
-  left_join(., pop_UF, by = c("state_nm" = "state")) %>%
+  # left_join(., pop_UF, by = c("state_nm" = "state")) %>%
   mutate(tb_inc = (total_TB_cases / pop_2010) * 100000) %>%
-  filter(year == 2019 & case_type == "prev" & model == "sp_2015-2019") %>%
+  filter(year == 2019 & case_type == "prev" & model == "sp_2015") %>%
   mutate(
     tb_inc = (total_TB_cases / pop_2010) * 100000,
     rr_inc = (fitted_RR / pop_2010) * 100000
@@ -126,7 +107,7 @@ state_list_prev <- compiled_results[["state_yr"]] %>%
   pull()
 
 
-fig_state_prev_sp <- fig_state(state_list = state_list_prev, model_name = "sp_2015-2019", case_type1 = "prev") %>%
+fig_state_prev_sp <- fig_state(state_list = state_list_prev, model_name = "sp_2015", case_type1 = "prev") %>%
   set_base_aes_specs()
 
 
@@ -145,10 +126,3 @@ fig_state_prev_sp <- fig_state(state_list = state_list_prev, model_name = "sp_20
 #   geom_line(aes(x = diag_qrt, y = mod_incidence, color = model)) +
 #
 #   facet_wrap(~state_nm, scales = "free")
-
-
-
-# Save output -------------------------------------------------------------
-ggsave(fig_state_new_sp, filename = "output/figures_and_tables/fig_state_new_sp.png", width = 14, height = 6)
-ggsave(fig_state_prev_sp, filename = "output/figures_and_tables/fig_state_prev_sp.png", width = 14, height = 6)
-
