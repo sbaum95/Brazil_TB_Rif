@@ -6,13 +6,7 @@
 
 
 # # Load data ---------------------------------------------------------------
-# load("data/sinan_xpert_tmp.rdata") # observed data
-# 
-# sinan_xpert <- sinan_tmp 
-# 
-# load("output/fitted_values_tmp.rdata") # fitted values from model
-# load("output/intervals_tmp.rdata") # uncertainty intervals from simulations
-# 
+
 
 ## Load state population for 2010
 pop_UF <- read_excel("data/Brazil_population_UF.xls", skip = 6) %>% 
@@ -35,7 +29,11 @@ aggregate_fitted_values <- function(model_name, agg_level) {
                             time > 8 & time <= 12 ~ 2016,
                             time > 12 & time <= 16 ~ 2017,
                             time > 16 & time <= 20 ~ 2018,
-                            time > 20 & time <= 24 ~ 2019)) %>% 
+                            time > 20 & time <= 24 ~ 2019, 
+                            time > 24 & time <= 28 ~ 2020,
+                            time > 28 & time <= 32 ~ 2021, 
+                            time > 32 & time <= 36 ~ 2022, 
+                            time > 36 & time <= 40 ~ 2023)) %>%
     group_by(
       case_when(
         agg_level == "nat_yr" ~ as.character(year), 
@@ -281,9 +279,6 @@ results_list[["state_yr"]] <- compile_results(agg_level = "state_yr", model_list
 results_list[["state_qrt"]] <- compile_results(agg_level = "state_qrt", model_list = model_list)
 
 compiled_results <- results_list
-
-# Store compiled results --------------------------------------------------
-save(compiled_results, file = results_file_name)
 
 
 
