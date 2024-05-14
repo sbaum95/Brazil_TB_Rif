@@ -108,7 +108,11 @@ get_nat_yr_int <- function(proj_cases) {
                             time > 8 & time <= 12 ~ 2016,
                             time > 12 & time <= 16 ~ 2017,
                             time > 16 & time <= 20 ~ 2018,
-                            time > 20 & time <= 24 ~ 2019)) %>%
+                            time > 20 & time <= 24 ~ 2019, 
+                            time > 24 & time <= 28 ~ 2020,
+                            time > 28 & time <= 32 ~ 2021, 
+                            time > 32 & time <= 36 ~ 2022, 
+                            time > 36 & time <= 40 ~ 2023)) %>%
     group_by(year) %>% 
     # Calculate number of projected RR-TB cases for each simulation 
     summarize(across(starts_with("proj"), ~sum(.), .names = "cases_{.col}")) %>% 
@@ -135,7 +139,11 @@ get_state_yr_int <- function(proj_cases) {
                             time > 8 & time <= 12 ~ 2016,
                             time > 12 & time <= 16 ~ 2017,
                             time > 16 & time <= 20 ~ 2018,
-                            time > 20 & time <= 24 ~ 2019)) %>%
+                            time > 20 & time <= 24 ~ 2019, 
+                            time > 24 & time <= 28 ~ 2020,
+                            time > 28 & time <= 32 ~ 2021, 
+                            time > 32 & time <= 36 ~ 2022, 
+                            time > 36 & time <= 40 ~ 2023)) %>%
     group_by(state, year) %>% 
     # Calculate number of projected RR-TB cases for each simulation 
     summarize(across(starts_with("proj"), ~sum(.), .names = "cases_{.col}")) %>% 
@@ -197,37 +205,21 @@ get_intervals <- function(model_name) {
 # Calculate uncertainty intervals for each model --------------------------
 intervals <- list()
 
-# model_name <- names(fitted_models)
-# intervals <- lapply(model_name, get_intervals)
-# intervals <- setNames(intervals, model_name)
+model_name <- names(fitted_models)
+intervals <- lapply(model_name, get_intervals)
+
+intervals <- setNames(intervals, model_name)
 
 
-intervals[["sp_2014-2019_new"]] <- get_intervals(model_name = "sp_2014-2019_new")
-intervals[["sp_2015-2019_new"]] <- get_intervals(model_name = "sp_2015-2019_new")
-intervals[["sp_2014-2019_prev"]] <- get_intervals(model_name = "sp_2014-2019_prev")
-intervals[["sp_2015-2019_prev"]] <- get_intervals(model_name = "sp_2015-2019_prev")
+# intervals[["sp_2014-2019_new"]] <- get_intervals(model_name = "sp_2014-2019_new")
+intervals[["sp_2015_new"]] <- get_intervals(model_name = "sp_2015_new")
+# intervals[["sp_2014-2019_prev"]] <- get_intervals(model_name = "sp_2014-2019_prev")
+intervals[["sp_2015_prev"]] <- get_intervals(model_name = "sp_2015_prev")
 
-
-intervals[["se1_sp_2015-2019_new"]] <- get_intervals(model_name = "se1_sp_2015-2019_new")
-intervals[["se1_sp_2015-2019_prev"]] <- get_intervals(model_name = "se1_sp_2015-2019_prev")
-intervals[["se2_sp_2015-2019_new"]] <- get_intervals(model_name = "se2_sp_2015-2019_new")
-intervals[["se2_sp_2015-2019_prev"]] <- get_intervals(model_name = "se2_sp_2015-2019_prev")
-
-
-
-# store intervals ---------------------------------------------------------
-save(intervals, file = intervals_file_name)
-
-
-
-
-
-
-# intervals[["tt_2014-2019_new"]] <- get_intervals(model_name = "tt_2014-2019_new")
-# intervals[["tt_2014-2019_prev"]] <- get_intervals(model_name = "tt_2014-2019_prev")
-# intervals[["tt_2015-2019_new"]] <- get_intervals(model_name = "tt_2015-2019_new")
-# intervals[["tt_2015-2019_prev"]] <- get_intervals(model_name = "tt_2015-2019_prev")
-# intervals[["se1_tt_2015-2019_new"]] <- get_intervals(model_name = "se1_tt_2015-2019_new")
-# intervals[["se1_tt_2015-2019_prev"]] <- get_intervals(model_name = "se1_tt_2015-2019_prev")
+# 
+intervals[["sens_1_new"]] <- get_intervals(model_name = "sens_1_new")
+intervals[["sens_1_prev"]] <- get_intervals(model_name = "sens_1_prev")
+# intervals[["se2_sp_2015-2019_new"]] <- get_intervals(model_name = "se2_sp_2015-2019_new")
+# intervals[["se2_sp_2015-2019_prev"]] <- get_intervals(model_name = "se2_sp_2015-2019_prev")
 
 
