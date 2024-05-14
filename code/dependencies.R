@@ -3,6 +3,7 @@ library(here)
 library(bannerCommenter)
 
 library(readxl)
+library(readr)
 library(haven)
 
 library(ggplot2)
@@ -16,6 +17,7 @@ library(tmap)
 library(janitor)
 
 library(mgcv)
-library(gratia)
-library(itsadug)
-library(tidygam)
+# library(gratia)
+# library(itsadug)
+# library(tidygam)
+library(rlang)
