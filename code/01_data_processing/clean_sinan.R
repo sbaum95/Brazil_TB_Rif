@@ -11,9 +11,6 @@ load_and_clean_sinan <- function() {
   names(sinan) <- tolower(names(sinan))
     
 
-  # sinan <- read_dta("data/fim_abr_2023_no name.dta")
-
-
   sinan_tmp <- sinan %>%
     # Create quarter and years based on date when patient was diagnosed with TB
     mutate(
@@ -45,7 +42,8 @@ sinan_tmp <- sinan_tmp %>%
   source(here::here("code/01_data_processing/clean_health_unit_type.R"))
   
 
-  sinan_tmp <- load_health_unit_type(years = c("2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014"), sinan_tmp = sinan_tmp)
+  sinan_tmp <- load_health_unit_type(sinan_tmp)
+  
   }
   
   
@@ -229,9 +227,9 @@ if ("health_unit" %in% covariates_to_pull) {
 
   
   rename(state = sg_uf_clean)
-}
   
   
+} else {
   
 sinan_tmp <- sinan_tmp %>%
   mutate(
@@ -314,7 +312,7 @@ sinan_tmp <- sinan_tmp %>%
   
   rename(state = sg_uf_clean)
 
-
+}
 
   ## Education - Already cleaned
   # sinan_tmp$cs_escol_n <- case_when(
