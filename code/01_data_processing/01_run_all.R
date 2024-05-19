@@ -8,20 +8,19 @@ source("code/dependencies.R")
 
 # Load sinan and set covariates  ----------------------------------------------------
 
-sinan <- foreign::read.dbf("data/base abril 24 si.dbf") 
+sinan <- foreign::read.dta("data/base_abr_2024_final.dta")
 
 covariates_to_pull <- c(
   "state", "state_nm", "id_mn_resi", "diag_qrt", "diag_yr", "tested", "result", 
   "sex", "age_cat", "tratamento", "hiv_status",  "lat", "lon",
   "pop_imig", "pop_rua", "pop_liber", "agravtabac", "agravalcoo", "agravdroga", 
-  "agravdiabe", "cs_escol_n"
-  # "health_unit"
+  "agravdiabe", "cs_escol_n", "health_unit"
 )
 
 years_to_pull <- c(2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023)
 
 
-file_version <- "2024"
+file_version <- "202405"
 
 
 
