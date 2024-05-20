@@ -1,10 +1,9 @@
 # Author: Sarah Baum
 # Created: 2024-03-22
-# Updated: 2024-05-13
+# Updated: 2024-05-19
 
 
 # Description: Run all models
-library(rlang)
 
 # Create model functions ---------------------------------------------------
 run_sp_model <- function(name, data, filter_expr, outcome, covariates, latitude, longitude, k_t, k_sp) {
@@ -108,6 +107,7 @@ run_sel_model <- function(name, data, filter_expr, outcome, covariates, latitude
 
 
 # Run models and store fitted results -------------------------------------
+fitted_models <- list() # To store model output
 
 
 # Spatial Models ----------------------------------------------------------
@@ -121,10 +121,10 @@ fitted_models[["sp_2014_new"]] <- run_sp_model(
   data = mdf_new_ind,
   filter_expr = quo(),
   outcome = "cbind(positive, negative)",
-  covariates = c("age_cat", "hiv_status", "sex"),
+  covariates = c("age_cat", "hiv_status", "sex", "health_unit"),
   latitude = "lat",
   longitude = "lon",
-  k_t = 30,
+  k_t = 40,
   k_sp = 50
 )
 
@@ -138,10 +138,10 @@ fitted_models[["sp_2014_prev"]] <- run_sp_model(
   data = mdf_prev_ind,
   filter_expr = quo(),
   outcome = "cbind(positive, negative)",
-  covariates = c("tratamento","age_cat", "hiv_status", "sex"),
+  covariates = c("tratamento","age_cat", "hiv_status", "sex", "health_unit"),
   latitude = "lat",
   longitude = "lon",
-  k_t = 30,
+  k_t = 40,
   k_sp = 50
 )
 tictoc::toc()
@@ -151,38 +151,38 @@ save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
 }
 
 
-if ("sp_2015" %in% models_to_run){
+if ("sp_2017" %in% models_to_run){
   
 ## New Cases
-# tictoc::tic()
-# fitted_models[["sp_2015_new"]] <- run_sp_model(
-#   data = mdf_new_ind %>% filter(time >= 5),
-#   outcome = "cbind(positive, negative)",
-#   # filter out quarter 12 
-#   filter_expr = quo(time != 12),
-#   covariates = c("age_cat", "hiv_status", "sex"),
-#   latitude = "lat", 
-#   longitude = "lon",
-#   k_t = 30,
-#   k_sp = 50
-# )
-# 
-# save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
-# tictoc::toc()
+tictoc::tic()
+fitted_models[["sp_2017_new"]] <- run_sp_model(
+  data = mdf_new_ind %>% filter(time >= 13),
+  outcome = "cbind(positive, negative)",
+  # filter out quarter 12
+  filter_expr = quo(),
+  covariates = c("age_cat", "hiv_status", "sex", "health_unit"),
+  latitude = "lat",
+  longitude = "lon",
+  k_t = 28,
+  k_sp = 50
+)
+
+save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
+tictoc::toc()
 
 
 
 
 ## Previous Cases
 tictoc::tic()
-fitted_models[["sp_2015_prev"]] <- run_sp_model(
-  data = mdf_prev_ind %>% filter(time >= 5),
-  filter_expr = quo(time != 12),
+fitted_models[["sp_2017_prev"]] <- run_sp_model(
+  data = mdf_prev_ind %>% filter(time >= 13),
+  filter_expr = quo(),
   outcome = "cbind(positive, negative)",
-  covariates = c("tratamento", "age_cat", "sex", "hiv_status"),
+  covariates = c("tratamento", "age_cat", "sex", "hiv_status", "health_unit"),
   latitude = "lat", 
   longitude = "lon",
-  k_t = 19,
+  k_t = 28,
   k_sp = 50
 )
 tictoc::toc()
@@ -198,15 +198,15 @@ save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
 if ("sens_1" %in% models_to_run){
 tictoc::tic()
 fitted_models[["sens_1_new"]] <- run_sp_model(
-  data = mdf_new_ind %>% filter(time >= 5),
-  filter_expr = quo(time != 12),
+  data = mdf_new_ind %>% filter(time >= 13),
+  filter_expr = quo(),
   outcome = "cbind(positive, negative)",
   covariates = c("age_cat", "sex", "hiv_status",
                  "pop_rua", "pop_liber", "agravtabac", "agravalcoo", "agravdroga", 
-                 "agravdiabe", "cs_escol_n", "pop_imig"),
+                 "agravdiabe", "cs_escol_n", "pop_imig", "health_unit"),
   latitude = "lat", 
   longitude = "lon",
-  k_t = 19,
+  k_t = 28,
   k_sp = 50
 )
 tictoc::toc()
@@ -216,15 +216,15 @@ save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
 
 tictoc::tic()
 fitted_models[["sens_1_prev"]] <- run_sp_model(
-  data = mdf_prev_ind %>% filter(time >= 5),
-  filter_expr = quo(time != 12),
+  data = mdf_prev_ind %>% filter(time >= 13),
+  filter_expr = quo(),
   outcome = "cbind(positive, negative)",
   covariates = c("age_cat", "sex", "hiv_status", "tratamento",
                  "pop_rua", "pop_liber", "agravtabac", "agravalcoo", "agravdroga", 
-                 "agravdiabe", "cs_escol_n", "pop_imig"),
+                 "agravdiabe", "cs_escol_n", "pop_imig", "health_unit"),
   latitude = "lat", 
   longitude = "lon",
-  k_t = 19,
+  k_t = 28,
   k_sp = 50
 )
 tictoc::toc()
@@ -237,13 +237,13 @@ save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
 if ("sens_2" %in% models_to_run){
 tictoc::tic()
 fitted_models[["sens_2_new"]] <- run_sel_model(
-  data = mdf_new_ind %>% filter(time >= 5),
-  filter_expr = quo(time != 12), 
+  data = mdf_new_ind %>% filter(time >= 13),
+  filter_expr = quo(),
   outcome = "cbind(positive, negative)",
-  covariates = c("age_cat", "sex", "hiv_status"),
+  covariates = c("age_cat", "sex", "hiv_status", "health_unit"),
   latitude = "lat", 
   longitude = "lon",
-  k_t = 19,
+  k_t = 28,
   k_sp = 50
 )
 tictoc::toc()
@@ -251,13 +251,13 @@ save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
 
 tictoc::tic()
 fitted_models[["sens_2_prev"]] <- run_sel_model(
-  data = mdf_prev_ind %>% filter(time >= 5),
-  filter_expr = quo(time != 12),
+  data = mdf_prev_ind %>% filter(time >= 13),
+  filter_expr = quo(),
   outcome = "cbind(positive, negative)",
-  covariates = c("tratamento", "age_cat", "sex", "hiv_status"),
+  covariates = c("tratamento", "age_cat", "sex", "hiv_status", "health_unit"),
   latitude = "lat", 
   longitude = "lon",
-  k_t = 19,
+  k_t = 28,
   k_sp = 50
 )
 tictoc::toc()
