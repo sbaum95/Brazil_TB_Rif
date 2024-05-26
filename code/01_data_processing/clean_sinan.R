@@ -119,9 +119,14 @@ sinan_tmp <- left_join(sinan_tmp, mun_population %>% select(id_mn_resi, sg_uf, m
     )
 
 
-  # Remove 0-4 YOs who have schooling
-  # sinan_tmp <- sinan_tmp %>% mutate(age = if_else(age <= 4 & cs_escol_n %in% c("4", "5", "6", "7", "8"), NA, age)) #| agravalcoo == 1 | agravtabac == 1 | pop_liber == 1), NA,
-  sinan_tmp <- sinan_tmp %>% mutate(age = if_else(age_idade <= 4 & cs_escol_n %in% c("4", "5", "6", "7", "8"), NA, age_idade)) #| agravalcoo == 1 | agravtabac == 1 | pop_liber == 1), NA,
+  # Clean age: 0-4 YOs who have schooling, Remove individuals who are over 100
+  sinan_tmp <- sinan_tmp %>%
+    mutate(
+      age = if_else((age_idade <= 4 & cs_escol_n %in% c("4", "5", "6", "7", "8")) | age_idade > 100, NA, age_idade),
+      age_flag = if_else((age_idade <= 4 & cs_escol_n %in% c("4", "5", "6", "7", "8")), "0-4 w/ school",
+        if_else(age_idade > 100, "> 100", "age_idade")
+      )
+    )
 
 
   # Finalize age categories
@@ -137,7 +142,6 @@ sinan_tmp <- left_join(sinan_tmp, mun_population %>% select(id_mn_resi, sg_uf, m
   )
 
   sinan_tmp$age_cat <- factor(sinan_tmp$age_cat, levels = c("0-4", "5-14", "15-24", "25-34", "35-44", "45-54", "55-64", "65+"))
-
 
   # Clean covariates --------------------------------------------------------
 sinan_tmp <- sinan_tmp %>%
