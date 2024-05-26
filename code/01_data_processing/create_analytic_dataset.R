@@ -8,8 +8,7 @@ create_analytic_dataset <- function(first_quarter, last_quarter, covariates, tra
   
   mdf <- sinan_tmp %>%
     filter(diag_qrt >= first_quarter & diag_qrt <= last_quarter) %>%
-    select(all_of(covariates)) %>%
-    filter(!is.na(lat))
+    select(all_of(covariates))
   
   ### Order the dates in ascending order
   sorted_dates <- sort(unique(mdf$diag_qrt))
