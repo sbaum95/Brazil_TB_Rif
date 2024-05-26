@@ -128,7 +128,7 @@ fitted_models[["sp_2014_new"]] <- run_sp_model(
   k_sp = 50
 )
 
-save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
+save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
 tictoc::toc()
 
 
@@ -145,8 +145,7 @@ fitted_models[["sp_2014_prev"]] <- run_sp_model(
   k_sp = 50
 )
 tictoc::toc()
-save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
-
+save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
 
 }
 
@@ -167,7 +166,7 @@ fitted_models[["sp_2017_new"]] <- run_sp_model(
   k_sp = 50
 )
 
-save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
+save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
 tictoc::toc()
 
 
@@ -186,7 +185,7 @@ fitted_models[["sp_2017_prev"]] <- run_sp_model(
   k_sp = 50
 )
 tictoc::toc()
-save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
+save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
 
 }
 
@@ -203,14 +202,14 @@ fitted_models[["sens_1_new"]] <- run_sp_model(
   outcome = "cbind(positive, negative)",
   covariates = c("age_cat", "sex", "hiv_status",
                  "pop_rua", "pop_liber", "agravtabac", "agravalcoo", "agravdroga", 
-                 "agravdiabe", "cs_escol_n", "pop_imig", "health_unit"),
+                 "agravdiabe", "cs_escol_n", "pop_imig", "health_unit", "race"),
   latitude = "lat", 
   longitude = "lon",
   k_t = 28,
   k_sp = 50
 )
 tictoc::toc()
-save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
+save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
 
 
 
@@ -221,14 +220,14 @@ fitted_models[["sens_1_prev"]] <- run_sp_model(
   outcome = "cbind(positive, negative)",
   covariates = c("age_cat", "sex", "hiv_status", "tratamento",
                  "pop_rua", "pop_liber", "agravtabac", "agravalcoo", "agravdroga", 
-                 "agravdiabe", "cs_escol_n", "pop_imig", "health_unit"),
+                 "agravdiabe", "cs_escol_n", "pop_imig", "health_unit", "race"),
   latitude = "lat", 
   longitude = "lon",
   k_t = 28,
   k_sp = 50
 )
 tictoc::toc()
-save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
+save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
 
 }
 
@@ -247,7 +246,7 @@ fitted_models[["sens_2_new"]] <- run_sel_model(
   k_sp = 50
 )
 tictoc::toc()
-save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
+save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
 
 tictoc::tic()
 fitted_models[["sens_2_prev"]] <- run_sel_model(
@@ -261,7 +260,7 @@ fitted_models[["sens_2_prev"]] <- run_sel_model(
   k_sp = 50
 )
 tictoc::toc()
-save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
+save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
 
 }
 
