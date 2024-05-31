@@ -1,49 +1,9 @@
-# Author: Sarah Baum (From Do Kyung Ryuk)
+# Author: Sarah Baum 
 # Created: 2023-06-28
-# Updated: 2023-03-22
-# Description:
-# -- Adapts Do's original code to merge health facility type to SINAN
 
-## Question:
-## - Is ID unit of treatment the same as the unit that made the notification? Which one would have diagnosed patient and used Xpert?
-##  -- Check to see whether notification and treatment unit are the same
+# Description: Add health unit type based on notifying health unit based on merge by NTP team 
 
 load_health_unit_type <- function(sinan_tmp) {
-  # 
-  # health_unit <- read_dta("data/health_service_level.dta") %>% 
-  #   rename(state_code = state)
-  # 
-  # ## Bring in state codes to properly code sg_uf_unidade
-  # state_codes <- read_excel("data/StateCodes.xlsx") %>%
-  #   select(sg_uf, uf_code)
-  # 
-  # health_unit <- left_join(health_unit, state_codes, by = c("state_code" = "uf_code")) %>% 
-  #   rename(sg_uf_unidade = sg_uf, 
-  #          id_mn_unidade = municip_cod)
-  # 
-  # # sinan_tmp$id_unidade <- as.numeric(as.character(sinan_tmp$id_unidade))
-  # sinan_tmp$id_munic_a <- as.numeric(as.character(sinan_tmp$id_munic_a))
-  # 
-  # health_unit$cnes <- as.numeric(as.character(health_unit$cnes))
-  # 
-  # sinan_with_unit <- list()
-  # 
-  # for (i in years) {
-  #   print(i)
-  # 
-  #   health_unit_in_year <- filter(health_unit, year == i)
-  # 
-  #   sinan_in_year <- filter(sinan_tmp, diag_yr == i) # merge based on year of diag, rather than year of notif
-  # 
-  #   merged <- merge(sinan_in_year, health_unit_in_year, by.x = "id_munic_a", by.y = "cnes", all.x = T)
-  # 
-  #   df_name <- paste0("dataset.", i)
-  # 
-  #   sinan_with_unit[[df_name]] <- merged
-  # }
-  # 
-  # 
-  # sinan_unit <- bind_rows(sinan_with_unit)
 
   sinan_unit <- sinan_tmp %>%
     mutate(health_unit_not = case_when(
@@ -60,12 +20,5 @@ load_health_unit_type <- function(sinan_tmp) {
 
   sinan_unit$health_unit <- factor(sinan_unit$health_unit_not, levels = c("low complexity", "medium complexity", "high complexity", "other"))
   
-
-  # sinan_unit <- sinan_unit %>% 
-  #   select(-c("year", "first_level", "second_level_tb", "third_level_tb", "second_level", "third_level", "others")) %>%
-  #   mutate(sg_uf_unidade = if_else(sg_uf_unidade == "" | sg_uf_unidade == "9", NA, sg_uf_unidade) %>% as.factor(),
-  #          id_mn_unidade = if_else(id_mn_unidade == "" | id_mn_unidade == "9", NA, id_mn_unidade) %>% as.factor())
-
   return(sinan_unit)
 }
-
