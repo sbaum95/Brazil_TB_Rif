@@ -1,10 +1,9 @@
 # Create function to get plots by state-quarter ---------------------------
-fig_state <- function(state_list, model_name, case_type1 = NULL, case_type2 = NULL) {
+fig_state <- function(state_list, model_name, type = NULL) {
   data <- compiled_results[["state_qrt"]] %>%
-    # left_join(., pop_UF, by = c("state_nm" = "state")) %>%
     mutate(tb_inc = (total_TB_cases / pop_2010) * 4 * 100000) %>%
     filter(state_nm %in% state_list) %>%
-    filter(model == model_name) %>%
+    filter(model == model_name & case_type == type) %>%
     group_by(diag_qrt, state_nm) %>%
     mutate(
       obs_inc = if_else(obs_RR != 0, (((obs_RR / obs_num_tested) * total_TB_cases) / pop_2010) * 4 * 100000, 0),
@@ -15,23 +14,12 @@ fig_state <- function(state_list, model_name, case_type1 = NULL, case_type2 = NU
 
   data$facet_state <- factor(data$state_nm, levels = state_list)
 
-
-  # Determine whether plot both case types or only one
-  if (!is.null(case_type1) & !is.null(case_type2)) {
-    data_plot <- data %>% filter(case_type %in% c(case_type1, case_type2))
-  } else if (!is.null(case_type1)) {
-    data_plot <- data %>% filter(case_type == case_type1)
-  } else {
-    data_plot <- data %>% filter(case_type == case_type2)
-  }
-
-
-  ggplot(data_plot) +
-    # Add line for projected incidence for each model (2017-2019)
-    geom_line(aes(x = diag_qrt, y = mod_inc, color = "Projected")) +
-    geom_ribbon(aes(x = diag_qrt, ymin = inc_lci, ymax = inc_hci, color = "Projected"), alpha = 0.5, fill = "lightgray", color = NA) +
+  ggplot(data) +
     # Add line for observed incidence for each model (2017-2019)
-    geom_line(aes(x = diag_qrt, y = obs_inc, color = "Observed (Xpert Only)")) +
+    geom_line(aes(x = diag_qrt, y = obs_inc, color = "Observed (Xpert Only)"), alpha = 0.6) +
+    # Add line for projected incidence for each model (2017-2019)
+    geom_ribbon(aes(x = diag_qrt, ymin = inc_lci, ymax = inc_hci, color = "Projected"), alpha = 0.4, fill = "lightgray", color = NA) +
+    geom_line(aes(x = diag_qrt, y = mod_inc, color = "Projected")) +
     scale_y_continuous(
       expand = c(0, 0),
       breaks = scales::pretty_breaks(n = 5)
@@ -40,8 +28,8 @@ fig_state <- function(state_list, model_name, case_type1 = NULL, case_type2 = NU
 }
 
 
-set_base_aes_specs <- function(by_state, case_type1) {
-  if (case_type1 == "new") {
+set_base_aes_specs <- function(by_state, type) {
+  if (type == "new") {
     by_state +
       scale_x_date(
         date_breaks = "1 year", # Set breaks to 1 year
@@ -55,7 +43,7 @@ set_base_aes_specs <- function(by_state, case_type1) {
       ) +
       scale_color_manual(
         name = "",
-        values = c(pal[1], pal[3])
+        values = c("black", pal[1])
       ) +
       theme_bw() +
       theme(
@@ -86,7 +74,7 @@ set_base_aes_specs <- function(by_state, case_type1) {
           "Observed (Xpert Only)",
           "Projected"
         ),
-        values = c(pal[1], pal[3])
+        values = c("black", pal[1])
       ) +
       theme_bw() +
       theme(
@@ -117,8 +105,8 @@ state_list_new <- compiled_results[["state_yr"]] %>%
   pull()
 
 
-fig_state_new_sp <- fig_state(state_list = state_list_new, model_name = "sp_2017", case_type1 = "new", case_type2 = NULL) %>%
-  set_base_aes_specs(case_type1 = "new")
+fig_state_new_sp <- fig_state(state_list = state_list_new, model_name = "sp_2017", type = "new") %>%
+  set_base_aes_specs(type = "new")
 
 # Previous cases
 state_list_prev <- compiled_results[["state_yr"]] %>%
@@ -135,8 +123,8 @@ state_list_prev <- compiled_results[["state_yr"]] %>%
   pull()
 
 
-fig_state_prev_sp <- fig_state(state_list = state_list_prev, model_name = "sp_2017", case_type1 = "prev") %>%
-  set_base_aes_specs(case_type1 = "prev")
+fig_state_prev_sp <- fig_state(state_list = state_list_prev, model_name = "sp_2017", type = "prev") %>%
+  set_base_aes_specs(type = "prev")
 
 # Combine
 fig_state_trends <- fig_state_new_sp + fig_state_prev_sp
