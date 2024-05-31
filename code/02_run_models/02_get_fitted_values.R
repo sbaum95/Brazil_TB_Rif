@@ -1,20 +1,9 @@
 # Author: Sarah Baum
 # Created: 2024-03-22
-# Updated: 2024-03-25
 
 # Description: Get fitted values from all models
 
-
-
-
-
-
-
 # Create function that store fitted values --------------------------------
-
-## Note: The following function fits to the data that the model is run on -- so
-## it will not impute Q12 if dropped from the model
-
 get_fitted_values <- function (model_name) {
   
   # Fit values 
@@ -25,7 +14,6 @@ get_fitted_values <- function (model_name) {
   return(fitted_values)
   
 }
-
 
 
 # Get fitted values from models -------------------------------------------
