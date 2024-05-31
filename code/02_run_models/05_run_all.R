@@ -44,7 +44,7 @@ tictoc::toc()
 
 tictoc::tic()
 
-source("code/02_run_models/03_get_uncertainty_intervals.R") # 1.5 hours, Not sure why this isn't running through lapply?
+source("code/02_run_models/03_get_uncertainty_intervals.R") # 1.5 hours
 
 save(intervals, file = paste0("output/intervals_", file_version, ".Rdata"))
 
@@ -68,8 +68,3 @@ source("code/02_run_models/04_compiled_results.R") # 30 minutes
 save(compiled_results, file = paste0("output/compiled_results_", file_version, ".Rdata"))
 
 tictoc::toc()
-
-
-
-
-
