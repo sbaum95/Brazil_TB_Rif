@@ -127,11 +127,11 @@ load_and_clean_sinan <- function() {
     sinan_tmp$age >= 65 ~ "65+"
   )
 
-  sinan_tmp$age_cat = factor(sinan_tmp$age_cat, levels = c("0-4", "5-14", "15-24", "25-34", "35-44", "45-54", "55-64", "65+"))
+  sinan_tmp$age_cat <- factor(sinan_tmp$age_cat, levels = c("0-4", "5-14", "15-24", "25-34", "35-44", "45-54", "55-64", "65+"))
 
-  
+
   # Clean covariates --------------------------------------------------------
- sinan_tmp <- sinan_tmp %>%
+  sinan_tmp <- sinan_tmp %>%
     mutate(
       # Sex
       sex = if_else(cs_sexo == "M", "male",
