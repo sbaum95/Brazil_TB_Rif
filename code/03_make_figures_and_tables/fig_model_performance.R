@@ -5,7 +5,7 @@ plot_observed_tested <- function(quarter, case_type1 = NULL, case_type2 = NULL) 
 
   data <- compiled_results[["nat_qrt"]] %>% 
     group_by(case_type) %>% 
-    filter(model == "sp_2015") %>% 
+    filter(model == "sp_2014") %>% 
     filter(diag_qrt >= quarter)
 
   
@@ -38,7 +38,7 @@ plot_observed_rr <- function(quarter, case_type1 = NULL, case_type2 = NULL) {
   
   data <- compiled_results[["nat_qrt"]] %>% 
     group_by(case_type) %>% 
-    filter(model == "sp_2015") %>% 
+    filter(model == "sp_2014") %>% 
     filter(diag_qrt >= quarter)
   
   
@@ -82,7 +82,7 @@ set_base_aes_specs <- function(plot) {
 
   plot + 
     scale_y_continuous(expand = c(0, 0), # So X-axis set at 0
-                      limits = c(0, 15), 
+                      limits = c(0, 35), 
                       labels = scales::label_percent(scale = 1)
     ) +  
     scale_x_date(
@@ -101,12 +101,12 @@ set_base_aes_specs <- function(plot) {
     scale_color_manual(
       name = "Case type",
       labels = c(
-        "New",
-        "Previous"
+        new_color,
+        prev_color
       ),
       values = c(
-        "black",
-               "red"
+        new_color,
+        prev_color
       )
       ) + 
     scale_size( 
@@ -120,17 +120,17 @@ set_base_aes_specs <- function(plot) {
 
 
 # Plot in ggplot ----------------------------------------------------------
-fig_obs <- plot_observed_tested(quarter = "2015-01-01", "new", "prev") + 
+fig_obs <- plot_observed_tested(quarter = "2014-01-01", "new", "prev") + 
   scale_y_continuous(expand = c(0, 0), # So X-axis set at 0
                      limits = c(0, 50), 
                      labels = scales::label_percent(scale = 1),
-                     name = "Percent tested with Xpert") + 
+                     name = "Percent tested with conclusive result") + 
   scale_x_date(
     date_breaks = "1 year",  # Set breaks to 1 year
     date_labels = "%Y"  # Format labels as year
   ) + 
   xlab("Quarter") + 
-  ggtitle("A) Proportion of cases tested with Xpert") +
+  ggtitle("A) Proportion of notified cases tested with Xpert MTB/RIF") +
   theme_bw() + 
   theme(
     axis.text.x  = element_text(size = 8), 
@@ -145,8 +145,8 @@ fig_obs <- plot_observed_tested(quarter = "2015-01-01", "new", "prev") +
       ""
     ),
     values = c(
-      "black",
-             "red"
+      new_color,
+      prev_color
     )
   ) + 
   theme(legend.position = "none")
@@ -154,35 +154,64 @@ fig_obs <- plot_observed_tested(quarter = "2015-01-01", "new", "prev") +
 
 
 
-fig_sp <- plot_observed_rr(quarter = "2015-01-01", "new", "prev") %>% 
-  # plot_model(agg_level = "nat_qrt", model_name = "sp_2014-2019") %>% 
-  plot_model(agg_level = "nat_qrt", model_name = "sp_2015") %>% 
+fig_sp <- plot_observed_rr(quarter = "2014-01-01", "new", "prev") %>% 
+  plot_model(agg_level = "nat_qrt", model_name = "sp_2014") %>%
+  plot_model(agg_level = "nat_qrt", model_name = "sp_2017") %>% 
   set_base_aes_specs() + 
-  ggtitle("B) Projected and observed proportion of cases with RR-TB") + 
+  ggtitle("B) Projected and observed proportion of notified cases with RR-TB") + 
   scale_linetype_manual(name = "Projected", 
-                        # labels = c("sp_2014-2019" = "2014-2019", 
-                        #            "sp_2015-2019" = "2015-2019 (Q12 dropped)"),
-                        labels = c("sp_2015" = "2015-2023 (Q12 dropped)"), 
-                        values=c("sp_2015" = "solid")
-                        # values=c("sp_2014-2019" = "solid",
-                        #          "sp_2015-2019" = "dashed")
+                        labels = c("sp_2014" = "2014-2023",
+                                   "sp_2017" = "2017-2023"),
+                        values=c("sp_2014" = "solid",
+                                 "sp_2017" = "dashed")
   )
   
 
 # Sensitivity analyses 
-fig_sens <- plot_observed_rr(quarter = "2015-01-01", "new", "prev") %>% 
-  plot_model(agg_level = "nat_qrt", model_name = "sens_1_2015") %>%
-  plot_model(agg_level = "nat_qrt", model_name = "se1_sp_2015-2019") %>% 
-  plot_model(agg_level = "nat_qrt", model_name = "se2_sp_2015-2019") %>% 
-  set_base_aes_specs() + 
-  ggtitle("Projected and observed proportion of cases with RR-TB") + 
-  scale_linetype_manual(name = "Projected", 
-                        labels = c("sp_2015-2019" = "Reference",
-                          "se1_sp_2015-2019" = "Additional patient covariates", 
-                          "se2_sp_2015-2019" = "Time varying selection"),
-                        values=c("sp_2015-2019" = "solid", 
-                          "se1_sp_2015-2019" = "dashed", 
-                          "se2_sp_2015-2019" = "dotted"))
+fig_sens <- plot_observed_rr(quarter = "2017-01-01", "new", "prev") %>% 
+  plot_model(agg_level = "nat_qrt", model_name = "sp_2017") %>%
+  plot_model(agg_level = "nat_qrt", model_name = "sens_1") %>% 
+  plot_model(agg_level = "nat_qrt", model_name = "sens_2") + 
+  scale_y_continuous(expand = c(0, 0), # So X-axis set at 0
+                     limits = c(0, 10), 
+                     labels = scales::label_percent(scale = 1)
+  ) +  
+  scale_x_date(
+    date_breaks = "1 year",  # Set breaks to 1 year
+    date_labels = "%Y"  # Format labels as year
+  ) + 
+  xlab("Quarter") + 
+  ylab("Percent with RR-TB") + 
+  theme_bw() + 
+  theme(
+    axis.text.x  = element_text(size = 8), 
+    axis.text.y  = element_text(size = 10), 
+    legend.text = element_text(size = 12), 
+    title = element_text(size = 12), 
+    plot.margin = margin(1, 0, 0, 0.5, "cm")) +
+  scale_color_manual(
+    name = "Case type",
+    labels = c(
+      "New",
+      "Previous"
+    ),
+    values = c(
+      new_color,
+      prev_color
+    )
+  ) + 
+  scale_size( 
+    name = "Observed number of cases tested with Xpert",
+    range = c(0.5, 5)
+  ) + 
+  ggtitle("Projected and observed proportion of notified cases with RR-TB") + 
+  scale_linetype_manual(name = "Model period", 
+                        labels = c("sp_2017" = "Reference",
+                          "sens_1" = "Additional patient covariates", 
+                          "sens_2" = "Time varying selection"),
+                        values=c("sp_2017" = "solid", 
+                          "sens_1" = "dashed", 
+                          "sens_2" = "dotted"))
   
   
 
