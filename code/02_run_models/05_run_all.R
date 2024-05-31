@@ -1,43 +1,39 @@
 # Author: Sarah Baum
 # Created: 2024-03-23
-# Updated: 2024-03-25
+# Updated: 2024-05-26
 
-# Description: Runs models, gets fitted values and uncertainity results, and compiles results 
+# Description: Runs models, gets fitted values and uncertainty results, and compiles results 
 
 source("code/dependencies.R")
-library(rlang)
 
+# Set up paths to store output and load
+file_version <- "20240526"
 
 # Select analytic datasets to load
-load("data/mdf_new_ind_tmp_2024.Rdata")
-load("data/mdf_prev_ind_tmp_2024.Rdata")
-
-
-# Set up paths to store output
-file_version <- "2024"
+load(paste0("data/mdf_new_ind_tmp_", file_version,".Rdata"))
+load(paste0("data/mdf_prev_ind_tmp_", file_version,".Rdata"))
 
 # Select models to run
-models_to_run <- c("sp_2015", "sens_1")
+models_to_run <- c("sp_2014_new", "sens_1_new", "sens_1_prev")
+
+# Store fitted models
+fitted_models <- list() # To store model output (if not adding models to existing fitted values)
 
 
 # 1. Run models --------------------------------------------------------------
 tictoc::tic()
 
-# fitted_models <- list() 
+source("code/02_run_models/01_run_models.R") # ~ 11 hours for all models
 
-source("code/02_run_models/01_run_models.R") # ~ 5 hours for all models
-
-
-save(fitted_models, file = paste0("fitted_models_", file_version, ".Rdata"))
+save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
 
 tictoc::toc()
-
 
 
 # 2. Get fitted values ----------------------------------------------------
 tictoc::tic()
 
-source("code/02_run_models/02_get_fitted_values.R") # 8 minutes
+source("code/02_run_models/02_get_fitted_values.R") # 30 minutes
 
 save(fitted_values, file = paste0("output/fitted_values_", file_version, ".Rdata"))
 
@@ -48,13 +44,11 @@ tictoc::toc()
 
 tictoc::tic()
 
-source("code/02_run_models/03_get_uncertainity_intervals.R") # 1.5 hours, Not sure why this isn't running through lapply?
+source("code/02_run_models/03_get_uncertainty_intervals.R") # 1.5 hours, Not sure why this isn't running through lapply?
 
 save(intervals, file = paste0("output/intervals_", file_version, ".Rdata"))
 
 tictoc::toc()
-
-
 
 
 # Compile results ---------------------------------------------------------
@@ -64,7 +58,7 @@ load(paste0("data/sinan_tmp_", file_version,".Rdata"))
 
 sinan_xpert <- sinan_tmp
 
-
+model_list <- names(fitted_values)#[grepl("sens_", names(fitted_values))]
 
 ## Output compiled results -------------------------------------------------
 tictoc::tic()
