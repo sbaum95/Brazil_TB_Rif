@@ -36,6 +36,15 @@ pop_2010 = sum(pop_UF$pop_2010)
 # Set palette
 pal <- ggsci::pal_npg("nrc", alpha = 0.8)(6)
 
+new_color = pal[3]
+prev_color = pal[1]
+projected_color = pal[1]
+cdr_color = pal[4]
+observed_all_color = pal[3]
+observed_xpert_color = pal[2]
+who_color = "black"
+
+
 # Figure 1 - National plot with trends in testing and RR-TB positivity (And sensitivity analyses)
 source("code/03_make_figures_and_tables/fig_model_performance.R")
 ggsave(fig_model_performance, filename = paste0("output/figures_and_tables/fig_", file_version_save, "_model_performance.png"), width = 14, height = 5)
