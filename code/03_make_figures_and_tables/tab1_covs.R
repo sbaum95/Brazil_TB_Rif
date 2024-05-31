@@ -1,10 +1,7 @@
 
 source("code/dependencies.R")
+
 library(stargazer)
-
-load("data/mdf_new_ind_tmp.Rdata")
-load("data/mdf_prev_ind_tmp.Rdata")
-
 
 
 ## Write function that produces univariate coefficients for each covariate 
@@ -145,15 +142,4 @@ prev_model_list[["multi_tested"]] <-  glm(tested ~ sex + tratamento + hiv_status
 prev_model_list[["multi_result"]] <-  glm(result ~ sex + tratamento + hiv_status + age_cat + health_unit, 
                                          family = binomial (link = "logit"), 
                                          data = mdf_prev_ind %>% filter(tested == "tested"))
-
-
-
-
-
-
-# Get table ---------------------------------------------------------------
-stargazer2(new_model_list)
-stargazer2(prev_model_list)
-
-
 
