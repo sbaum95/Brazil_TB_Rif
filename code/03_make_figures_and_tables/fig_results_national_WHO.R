@@ -232,7 +232,7 @@ fig_nat_imp <- ggplot() +
   xlab("") +
   scale_color_manual(
     name = "",
-    values = c(pal[1], "black")
+    values = c(projected_color, who_color)
   ) +
   theme_bw() +
   theme(
@@ -275,7 +275,7 @@ fig_nat_imp <- ggplot() +
   theme_bw() +
   scale_color_manual(
     name = "",
-    values = c(pal[1], "black")
+    values = c(projected_color, who_color)
   ) +
   theme(
     legend.position = c("none"),
@@ -338,6 +338,6 @@ fig_nat_imp <- ggplot() +
       "D Observed xpert" = "Observed (Xpert)",
       "E WHO" = "WHO"
     ),
-    values = c(pal[4], pal[1], pal[3], pal[2],"black")
+    values = c(cdr_color, projected_color, observed_all_color, observed_xpert_color, who_color)
   ) +
   theme(plot.title = element_text(hjust = 0.5))
