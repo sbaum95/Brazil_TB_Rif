@@ -232,7 +232,7 @@ fig_nat_imp <- ggplot() +
   xlab("") +
   scale_color_manual(
     name = "",
-    values = c(pal[3], "black")
+    values = c(pal[1], "black")
   ) +
   theme_bw() +
   theme(
@@ -275,7 +275,7 @@ fig_nat_imp <- ggplot() +
   theme_bw() +
   scale_color_manual(
     name = "",
-    values = c(pal[3], "black")
+    values = c(pal[1], "black")
   ) +
   theme(
     legend.position = c("none"),
@@ -338,70 +338,6 @@ fig_nat_imp <- ggplot() +
       "D Observed xpert" = "Observed (Xpert)",
       "E WHO" = "WHO"
     ),
-    values = c(pal[2], pal[3], pal[1], pal[4],"black")
+    values = c(pal[4], pal[1], pal[3], pal[2],"black")
   ) +
   theme(plot.title = element_text(hjust = 0.5))
-
-# Area plot version
-# # Plot total incidence per 100,000 PY
-# ggplot() +
-#   # CDR
-#   geom_area(
-#     data = data_total,
-#     aes(x = diag_qrt, y = cdr_inc, fill = "A CDR-inflated")
-#   ) +
-#   # Projected
-#   geom_area(
-#     data = data_total,
-#     aes(x = diag_qrt, y = projected_inc, fill = "B Projected")
-#   ) +
-#   geom_ribbon(
-#     data = data_total,
-#     aes(x = diag_qrt, ymin = projected_inc_lci, ymax = projected_inc_hci, color = "B Projected"), alpha = 0.5, fill = "lightgray", color=NA
-#   ) +
-#   # Observed - Xpert + DST
-#   geom_area(
-#     data = data_total,
-#     aes(x = diag_qrt, y = observed_total_inc, fill = "C Observed total")
-#   ) +
-#   geom_area(
-#     data = data_total,
-#     aes(x = diag_qrt, y = observed_xpert_inc, fill = "D Observed xpert")
-#   ) + 
-#   # WHO
-#   geom_point(
-#     data = who_data_total,
-#     aes(x = diag_qrt, y = who_inc, color = "E WHO")
-#   ) +
-#   geom_errorbar(
-#     data = who_data_total,
-#     aes(x = diag_qrt, ymin = who_inc_lo, ymax = who_inc_hi, color = "E WHO"), width = 75, alpha = 0.6
-#   ) +
-#   ggtitle("Total") +
-#   scale_y_continuous(
-#     name = "RR-TB cases per 100,000 persons/year",
-#     expand = c(0, 0),
-#     limits = c(0, 5)
-#   ) +
-#   scale_x_date(
-#     date_breaks = "1 year", # Set breaks to 1 year
-#     date_labels = "%Y" # Format labels as year
-#   ) +
-#   xlab("") +
-#   theme_bw() +
-#   scale_fill_manual(
-#     name = "",
-#     labels = c(
-#       "A CDR-inflated" = "CDR-inflated", 
-#       "B Projected" = "Projected",
-#       "C Observed total" = "Observed (Xpert + DST)",
-#       "D Observed xpert" = "Observed (Xpert)"
-#     ),
-#     values = c(pal[2], pal[3], pal[1], pal[4])
-#   ) +
-#   scale_color_manual(name = "", 
-#                      labels = c("WHO" = "WHO"), 
-#                      values = "black") + 
-#   theme(plot.title = element_text(hjust = 0.5))
-
-
