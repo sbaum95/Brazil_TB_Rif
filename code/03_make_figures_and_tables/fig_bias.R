@@ -5,20 +5,20 @@ fig_bias <- ggplot() +
   ## Plot point estimate 
   geom_line(
     data = compiled_results[["nat_qrt"]] %>% 
-      filter(model == "sp_2015") %>% 
+      filter(model == "sp_2017") %>% 
       group_by(case_type) %>% 
       mutate(bias = fitted_RR/obs_RR),
     aes(diag_qrt, bias, color = case_type)) + 
   
   ## Plot error bar 
-  geom_errorbar(data = compiled_results[["nat_qrt"]] %>% 
-                  filter(model == "sp_2015") %>% 
+  geom_ribbon(data = compiled_results[["nat_qrt"]] %>% 
+                  filter(model == "sp_2017") %>% 
                   group_by(case_type) %>% 
                   mutate(bias_lci = proj_lci/obs_RR, 
                          bias_hci = proj_hci/obs_RR), 
-                aes(x = diag_qrt, ymin = bias_lci, ymax = bias_hci, color = case_type), width = 30) + 
+                aes(x = diag_qrt, ymin = bias_lci, ymax = bias_hci, group = case_type, fill = case_type), alpha = 0.2, color = NA) + 
   scale_y_continuous(expand = c(0,0), 
-                     limits = c(0,15)) + 
+                     limits = c(0,10)) + 
   scale_x_date(
     date_breaks = "1 year",  # Set breaks to 1 year
     date_labels = "%b %Y"  # Format labels as year
@@ -33,10 +33,14 @@ fig_bias <- ggplot() +
         axis.text.y  = element_text(size = 12), 
         legend.text = element_text(size = 12), 
         title = element_text(size = 14)) +
-  scale_color_manual(name="Case Type",
+  scale_color_manual(name="Case type",
                      labels=c("New",
                               "Previous"),
-                     values=c("black", "red"))
+                     values=c(new_color, prev_color)) + 
+  scale_fill_manual(name="Case type",
+                     labels=c("New",
+                              "Previous"),
+                     values=c(new_color, prev_color))
 
 
 
