@@ -20,7 +20,7 @@ National drug resistance surveillance surveys are infrequent and resource-intens
 
 # Model Specification
 
-We develop a model that estimates national and state-level levels and trends in RR-TB incidence among new and previously treated TB cases between 2014-2019. 
+We develop a model that estimates national and state-level levels and trends in RR-TB incidence among new and previously treated TB cases between 2014-2023 (was previously 2014-2019). 
 <!-- -   Models risk of positivity by characteristics of patient and municipality where they reside -->
 
 <!-- -   Note: Between 2014-2019, \~3,300 cases diagnosed outside of patient's state of residence; \~88,000 cases diagnosed outside patient's municipality of residence (e.g. cases are not being attributed to municipalities/states in which cases are generated) -->
@@ -39,114 +39,104 @@ We develop a model that estimates national and state-level levels and trends in 
 
 -  Fit separate models for new cases and previously treated (e.g. relapse and re-entry) cases 
 -  Fit model to two different time periods: 
-    - 2014-2019 - Full period 
-    - 2015-2019, dropping period of Xpert stock outs (Quarter 12) - Excluding early implementation noise and stock outs in 2016 during which testing dropped sharply
+    - 2014-2023 - Full period 
+    - 2017-2023 - Excluding early implementation noise in 2014-2015 and stock outs in 2016 
   
 
-### Specifications
-#### 1. Time trend model
-
-We build on the above by including several characteristics of the municipality where a patient resides that are potentially connected to underlying RR-TB prevalence and access to Xpert:
-
-- Urbanicity - Percent of the population in urban setting (2010 census) 
-- Bolsa Familia coverage - Percent of the population benefiting from BF
-- Presence of a prison - Municipality has prison at some point during 2014-2019 period (SISPEN)
-- FHS Coverage - Average number of health teams per 4,000 people
-- Border - Whether the municipality borders another country
-    
-This specification assumes that the relationship between patient- and municipality-characteristics and whether someone gets tested with Xpert or their risk of RR-TB is not varying over time or by state.
-
-#### Time trend model
-```{r tt specification, eval = FALSE}
-result ~ s(state, bs = "re") + s(time) + s(time, by = state, id = 1) + age_cat + hiv_status + 
-  sex + health_unit + border + bf_cat + urban_cat + has_prison + fhs_cat
-```
-
-
-#### 2. Spatial model
-
-In the spatial model, we are no longer explicitly specifying which municipality characteristics we think are associated with RR-TB positivity or being tested with Xpert. Under the time trend model, we might be missing other important predictors that are either included in Sinan, but that we haven't included in our model, or that are unobservable. The spatial model captures these unobservable aspects that are not varying overtime. Latitude and longitude are based off the municipality centroid. 
+Our primary specification is the spatial model. Here, we no longer explicitly specify which municipality characteristics we think are associated with RR-TB positivity or being tested with Xpert, which may miss important predictors that are either included in SINAN, but that we haven't included in our model, or that are unobservable. The spatial model captures these unobservable aspects that do not vary over time. Latitude and longitude are based off the municipality centroid. 
 
 ```{r spatial specification, eval = FALSE}
 result ~ s(state, bs = "re") + s(time) + s(time, by = state, id = 1) + s(lat, lon) + 
   age_cat + hiv_status + sex + health_unit
 ```
 
-
-
-
-
 # Model Output
 
 ## National-level estimates
-The following figures depict Xpert testing trends as well as the observed and projected RR-TB incidence per 1,000 TB cases (on the left axis) and percent of total TB cases tested with Xpert (on the right axis). We define tested as cases with a conclusive Xpert test result. The size of the observations correspond to the number of cases with a conclusive Xpert test result for a given quarter. Observed RR-TB incidence is defined as the share of cases with a conclusive Xpert test result with a positive test per 1,000 TB cases. 
 
-The first figure depicts the projected RR-TB incidence using the time trend models for both 2014-2019 and 2015-2019 (dropping quarter 12). 
-```{r echo=FALSE, out.width = "110%"}
-knitr::include_graphics("output/figures_and_tables/fig_tt.png")
-```
-
-The second figure depicts the projected RR-TB incidence using the spatial models for both 2014-2019 and 2015-2019 (dropping quarter 12), with the time trend model for 2014-2019 as a reference point to compare estimates across models. 
+### Fig 1. Trends in Xpert testing and projected RR-TB positivity, 2014-2023
 ```{r, echo=FALSE, out.width = "110%"}
-knitr::include_graphics("output/figures_and_tables/fig_tt_sp.png")
+knitr::include_graphics("output/figures_and_tables/fig_202405_model_performance.png")
 ```
+Panel A presents the proportion of new and previously treated cases being tested with Xpert and having a conclusive result, defined as being either sensitive (RR-TB negative) or resistant (RR-TB positive). We exclude observations where patients were tested with Xpert, but their result was labeled as inconclusive, in progress, or where TB was not detected. In Panel B, points reflect the observed proportion of conclusive Xpert tests that are resistant. Point size indicates the number of cases in a given quarter with a conclusive Xpert test result. Lines reflect the projected RR-TB positivity among all notified TB cases for a given quarter, where line type presents the output for separate models. 
 
-<!-- ## Bias -->
-<!-- We now provide a comparison how "biased" the observed data is relative to projected number of RR-TB cases. Comparing projected to observed, we interpret this as how many times higher he  -->
-
-<!-- We derive estimates using the spatial model for 2015-2019, dropping the quarter that experienced stock outs.  -->
-<!-- ```{r, echo=FALSE, out.width = "110%"} -->
-<!-- knitr::include_graphics("output/figures_and_tables/fig_bias.png") -->
+<!-- ### Fig 2. Extent to which observed Xpert results underestimate true RR-TB case counts (2017-2023) -->
+<!-- ```{r, echo=FALSE, out.width = "100%"} -->
+<!-- knitr::include_graphics("output/figures_and_tables/fig_202405_bias.png") -->
 <!-- ``` -->
+<!-- We now provide a comparison of how "biased" the observed data is relative to modeled number of RR-TB cases. Each point reflects the bias in observed data as function of the ratio of projected to observed RR-TB case counts. This should be interpreted as how much higher are the true RR-TB case counts as projected by the model, relative to the observed data. 95\% uncertainty intervals are included.  -->
+
+### Fig 2. Projected national RR-TB estimates by quarter (2017-2023)
+```{r, echo=FALSE, out.width = "100%"}
+knitr::include_graphics("output/figures_and_tables/fig_202405_nat_imp.png")
+```
+Both panels present projected national estimates by quarter with 95\% uncertainty intervals. Panel A presents the projected proportion of notified TB cases with RR-TB by case type. Panel B presents the total number of RR-TB cases among those that are notified, combining both new and previous case counts, per 100,000 population.  
 
 
+### Fig 3. RR-TB proportion by case type and total notified cases per 100,000 comparing projected to WHO estimates (2017-2022)
+```{r, echo=FALSE, out.width = "110%"}
+knitr::include_graphics("output/figures_and_tables/fig_202405_total_inc.png")
+```
+Panel A and B present the annual projected RR-TB positivity by case type. Panel C present RR-TB cases per 100,000 projected by the model. It also includes total incidence adjusted by Brazil's case detection rate to account for cases not reported to the health system and thus, not captured by SINAN. All three panels are overlaid by the corresponding estimates and 95\% uncertainty intervals from the World Health Organization's Global Tuberculosis Programme.
+
+
+\newpage
 
 ## State-level estimates
 
-The following figures provide a snapshot of RR-TB incidence in 2019 among all states derived from the spatial model. These include point estimates from the fitted models and 95\% uncertainty intervals. 
+Panel A of Figures 4 and 5 present projected proportion of TB cases with RR-TB by state. Panel B presents the same point estimate projections with 95\% uncertainty intervals by each state and indication of regional affiliation.  
 
-```{r, echo=FALSE, out.width = "110%"}
-knitr::include_graphics("output/figures_and_tables/fig_state_new_2019.png")
+### Fig 4. New cases - Projected RR-TB positivity by state (2023)
+```{r, echo=FALSE, out.width = "45%"}
+knitr::include_graphics("output/figures_and_tables/fig_202405_state_new_map.png")
 ```
 
-
-```{r, echo=FALSE, out.width = "110%"}
-knitr::include_graphics("output/figures_and_tables/fig_state_prev_2019.png")
+```{r, echo=FALSE, out.width = "80%"}
+knitr::include_graphics("output/figures_and_tables/fig_202405_state_new_plot.png")
 ```
 
+### Fig 5. Previous cases - Projected RR-TB positivity by state (2023)
+```{r, echo=FALSE, out.width = "50%"}
+knitr::include_graphics("output/figures_and_tables/fig_202405_state_prev_map.png")
+```
 
-The following two figures compare trends in projected (black) and observed (red) RR-TB incidence between 2015-2019 for a subset of states determined by their absolute number of TB cases. These include point estimates from the fitted models and 95\% uncertainty intervals. States are ordered alphabetically. 
+```{r, echo=FALSE, out.width = "80%"}
+knitr::include_graphics("output/figures_and_tables/fig_202405_state_prev_plot.png")
+```
+
+\newpage
+
+Figure 6 and 7 present a trends among a subset of states with the highest number of notified RR-TB cases per population 2023. States are ordered from highest to lowest number of RR-TB cases per population. Y-axes are state specific. We estimate 95\% uncertainty intervals. 
+
+### Fig 6. New cases - State-level trends in quarterly RR-TB cases among notified TB cases per 100,000 population
 ```{r, echo=FALSE, out.width = "115%"}
-knitr::include_graphics("output/figures_and_tables/fig_state_new_sp.png")
+knitr::include_graphics("output/figures_and_tables/fig_202405_state_new_sp.png")
 ```
 
+### Fig 7. Previous cases - State-level trends in quarterly RR-TB cases among notified TB cases per 100,000 population
 ```{r, echo=FALSE, out.width = "115%"}
-knitr::include_graphics("output/figures_and_tables/fig_state_prev_sp.png")
+knitr::include_graphics("output/figures_and_tables/fig_202405_state_prev_sp.png")
 ```
 
 
+\newpage 
 
 ## Sensitivity Analyses
+
+We explore two additional specifications as sensitivity analyses: 
 
 ### 1. Additional patient covariates
 We might be worried that the patient covariates we've included are not the only factors that determine whether or not a patient is tested with Xpert or their risk of having RR-TB. We include other coviariates to explore whether our previous estimates are robust or vary: 
 
+
 ```{r, eval = FALSE}
 result ~ s(state, bs = "re") + s(time) + s(time, by = state, id = 1) + s(lat, lon) + 
   age_cat + hiv_status + sex + health_unit + homeless + incarcerated + smokes + 
-  uses_alcohol + uses_drugs + has_diabetes
+  uses_alcohol + uses_drugs + has_diabetes + education + immigration_status
 ```
-- Note: Education and immigration status forthcoming
-
-```{r, echo = FALSE, out.width = "110%"}
-knitr::include_graphics("output/figures_and_tables/fig_se1.png")
-```
-
-
 
 ### 2. Selection effects 
 Our primary model follows the assumption that the relationship between observable patient characteristics, RR-TB incidence, and getting tested with Xpert does not vary overtime. While the biological relationship between these characteristics and RR-TB incidence may be less likely to vary overtime, we might worry that the likelihood that a patient is tested based on these observable characteristics could change overtime. 
-
 ```{r, eval = FALSE}
 result ~ s(state, bs = "re") + s(time) + s(time, by = state, id = 1) + s(lat, lon) + 
   age_cat + hiv_status + sex + health_unit + s(time, by = age_cat) + 
@@ -154,14 +144,28 @@ result ~ s(state, bs = "re") + s(time) + s(time, by = state, id = 1) + s(lat, lo
 ```
 
 
+Figure 8 compares projected results from the two sensitivity specifications described above for the period 2017-2023. The first model controls for additional patient covariates, including for educational attainment, diabetes, drug consumption, tobacco consumption, alcohol consumption, whether they are experiencing homelessness, whether they are incarcerated, and their immigration status. The second model fits smooth interactions between the original set of patient covariates in the model with time to determine whether their are any changes in selection over time. These are compared to output from the primary specification. 
+
 ```{r, echo = FALSE, out.width = "110%"}
-knitr::include_graphics("output/figures_and_tables/fig_se2.png")
+knitr::include_graphics("output/figures_and_tables/fig_202405_sens.png")
 ```
 
 
 
-```{r, echo = FALSE, eval = FALSE}
-## All models together
+<!-- #### 1. Time trend model -->
 
-```
+<!-- We build on the above by including several characteristics of the municipality where a patient resides that are potentially connected to underlying RR-TB prevalence and access to Xpert: -->
 
+<!-- - Urbanicity - Percent of the population in urban setting (2010 census)  -->
+<!-- - Bolsa Familia coverage - Percent of the population benefiting from BF -->
+<!-- - Presence of a prison - Municipality has prison at some point during 2014-2019 period (SISPEN) -->
+<!-- - FHS Coverage - Average number of health teams per 4,000 people -->
+<!-- - Border - Whether the municipality borders another country -->
+
+<!-- This specification assumes that the relationship between patient- and municipality-characteristics and whether someone gets tested with Xpert or their risk of RR-TB is not varying over time or by state. -->
+
+<!-- #### Time trend model -->
+<!-- ```{r tt specification, eval = FALSE} -->
+<!-- result ~ s(state, bs = "re") + s(time) + s(time, by = state, id = 1) + age_cat + hiv_status +  -->
+<!--   sex + health_unit + border + bf_cat + urban_cat + has_prison + fhs_cat -->
+<!-- ``` -->
