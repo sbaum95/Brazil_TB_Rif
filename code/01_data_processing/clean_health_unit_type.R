@@ -1,10 +1,9 @@
-# Author: Sarah Baum 
+# Author: Sarah Baum
 # Created: 2023-06-28
 
-# Description: Add health unit type based on notifying health unit based on merge by NTP team 
+# Description: Add health unit type based on notifying health unit based on merge by NTP team
 
 load_health_unit_type <- function(sinan_tmp) {
-
   sinan_unit <- sinan_tmp %>%
     mutate(health_unit_not = case_when(
       first_level_not == 1 ~ "low complexity",
@@ -19,6 +18,6 @@ load_health_unit_type <- function(sinan_tmp) {
     ))
 
   sinan_unit$health_unit <- factor(sinan_unit$health_unit_not, levels = c("low complexity", "medium complexity", "high complexity", "other"))
-  
+
   return(sinan_unit)
 }
