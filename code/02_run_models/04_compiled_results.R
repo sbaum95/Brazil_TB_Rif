@@ -45,7 +45,7 @@ aggregate_fitted_values <- function(model_name, agg_level) {
         agg_level == "state_qrt" ~ paste(state, as.character(diag_qrt), sep = ",")
       )
     ) %>%
-    summarize(fitted_RR = sum(fitted * cases))
+    summarize(fitted_RR = sum((fitted * (cases - (negative + positive))) + (negative * 0) + positive))
 
   # Rename first column
   if (agg_level == "state_qrt") {
