@@ -50,7 +50,7 @@ get_proj_cases <- function(pred_output){
       # Convert simulated log odds to probabilities
       across(starts_with("X"), ~ plogis(.), .names = "prob_{.col}"), 
       # Calculate number of cases from simulation 
-      across(starts_with("prob"), ~ . * cases, .names = "proj_{.col}")) %>% 
+      across(starts_with("prob"), (~ . * (cases - (negative + positive)) + (negative * 0) + positive), .names = "proj_{.col}")) %>% 
     select(-c(starts_with("X"), starts_with("prob")))
   
   return(proj_cases)
