@@ -5,7 +5,7 @@
 # Description: Calculate uncertainty intervals for each model as various aggregation levels
 
 
-load(paste0("output/fitted_models_", file_version,".Rdata"))
+# load(paste0("output/fitted_models_", file_version_load,".Rdata"))
 
 # Create functions --------------------------------------------------------
 
@@ -210,26 +210,26 @@ intervals <- list()
 model_name <- names(fitted_models)
 
 intervals[["sp_2014_new"]] <- get_intervals(model_name = "sp_2014_new")
-save(intervals, file = paste0("output/intervals_", file_version, ".Rdata"))
+save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
 
 intervals[["sp_2017_new"]] <- get_intervals(model_name = "sp_2017_new")
-save(intervals, file = paste0("output/intervals_", file_version, ".Rdata"))
+save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
 
 intervals[["sp_2014_prev"]] <- get_intervals(model_name = "sp_2014_prev")
-save(intervals, file = paste0("output/intervals_", file_version, ".Rdata"))
+save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
 
 intervals[["sp_2017_prev"]] <- get_intervals(model_name = "sp_2017_prev")
-save(intervals, file = paste0("output/intervals_", file_version, ".Rdata"))
+save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
 
 intervals[["sens_1_new"]] <- get_intervals(model_name = "sens_1_new")
-save(intervals, file = paste0("output/intervals_", file_version, ".Rdata"))
+save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
 
 intervals[["sens_1_prev"]] <- get_intervals(model_name = "sens_1_prev")
-save(intervals, file = paste0("output/intervals_", file_version, ".Rdata"))
+save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
 
 intervals[["sens_2_new"]] <- get_intervals(model_name = "sens_2_new")
-save(intervals, file = paste0("output/intervals_", file_version, ".Rdata"))
+save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
 
 intervals[["sens_2_prev"]] <- get_intervals(model_name = "sens_2_prev")
-save(intervals, file = paste0("output/intervals_", file_version, ".Rdata"))
+save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
 
