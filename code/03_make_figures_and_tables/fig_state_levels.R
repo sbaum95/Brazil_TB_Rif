@@ -61,7 +61,8 @@ shp_new <- ggplot() +
   ggtitle("A) New Cases") + 
   theme_void() +
   theme(
-    legend.title = element_text(size = 12), 
+    title = element_text(size = 14),
+    legend.title = element_text(size = 10), 
     legend.position = "bottom",
     plot.margin = margin(0, 0, 0, 0, "cm"),
     legend.margin = margin(t = -5, r = 0, b = 0, l = 0),
@@ -80,7 +81,8 @@ shp_prev <- ggplot(shp_prev_2023) +
   ggtitle("B) Previous Cases") + 
   theme_void() +
   theme(
-    legend.title = element_text(size = 12), 
+    title = element_text(size = 14),
+    legend.title = element_text(size = 10), 
     legend.position = "bottom",
     plot.margin = margin(0, 0, 0, 0, "cm"),
     legend.margin = margin(t = -5, r = 0, b = 0, l = 0),
@@ -109,7 +111,6 @@ fig_new <- ggplot(data = state_new_2023) +
     axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
     axis.text.y = element_text(size = 9),
     legend.text = element_text(size = 9),
-    title = element_text(size = 10),
     plot.title = element_text(hjust = 0.5),
     plot.margin = margin(1, 0, 1, 1, "cm")
   )
@@ -120,14 +121,13 @@ fig_prev <- ggplot(data = state_prev_2023) +
   geom_point(aes(x = reorder(uf_name_code, mod_pct), y = mod_pct, color = region)) +
   geom_errorbar(aes(x = uf_name_code, ymin = pct_lci, ymax = pct_hci, color = region), alpha = 0.5) +
   xlab("State") +
-  ylab("") +
+  ylab("Projected RR-TB positivity") +
   theme_bw() +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
     axis.text.y = element_text(size = 9),
     legend.text = element_text(size = 9),
-    title = element_text(size = 10),
     plot.title = element_text(hjust = 0.5),
     plot.margin = margin(1, 0, 1, 1, "cm")
   ) +
@@ -139,4 +139,3 @@ fig_prev <- ggplot(data = state_prev_2023) +
 
 # Combine plots 
 fig_combined_level <- gridExtra::grid.arrange(shp_new, fig_new, shp_prev, fig_prev, nrow = 2, ncol = 2, heights = c(1, 1), widths = c(1, 2))
-ggsave(fig_combined_level, filename = paste0("output/figures_and_tables/fig_", file_version, "_state_combined_level.png"), width = 16, height = 12)
