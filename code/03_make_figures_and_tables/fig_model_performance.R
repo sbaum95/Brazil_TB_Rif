@@ -110,7 +110,7 @@ fig_sp <- plot_observed_rr(quarter = "2017-01-01", "new", "prev") +
   ) +
   scale_y_continuous(
     expand = c(0, 0), # So X-axis set at 0
-    limits = c(0, 10),
+    limits = c(0, 10.5),
     labels = scales::label_percent(scale = 1)
   ) +
   scale_x_date(
@@ -151,62 +151,8 @@ fig_sp <- plot_observed_rr(quarter = "2017-01-01", "new", "prev") +
 
 
 # Sensitivity analyses
-## Sensitivity 1: Specifications
-fig_sens_1 <- plot_observed_rr(quarter = "2017-01-01", "new", "prev") %>%
-  plot_model(agg_level = "nat_qrt", model_name = "sp_2017") %>%
-  plot_model(agg_level = "nat_qrt", model_name = "sens_1") %>%
-  plot_model(agg_level = "nat_qrt", model_name = "sens_2") +
-  scale_y_continuous(
-    expand = c(0, 0), 
-    limits = c(0, 10),
-    labels = scales::label_percent(scale = 1)
-  ) +
-  scale_x_date(
-    date_breaks = "1 year", 
-    date_labels = "%Y" 
-  ) +
-  xlab("Quarter") +
-  ylab("Percent with RR-TB") +
-  ggtitle("A) Comparing specifications") +
-  scale_color_manual(
-    name = "Case type",
-    labels = c(
-      "New",
-      "Previous"
-    ),
-    values = c(
-      new_color,
-      prev_color
-    )
-  ) +
-  scale_size(
-    name = "Observed number of cases tested with Xpert",
-    range = c(0.5, 5)
-  ) +
-  scale_linetype_manual(
-    name = "Panel A: Specification",
-    labels = c(
-      "sp_2017" = "Reference",
-      "sens_1" = "Additional patient covariates",
-      "sens_2" = "Time-varying selection"
-    ),
-    values = c(
-      "sp_2017" = "solid",
-      "sens_1" = "dashed",
-      "sens_2" = "dotted"
-    )
-  ) + 
-  theme_bw() +
-  theme(
-    axis.text.x = element_text(size = 8),
-    axis.text.y = element_text(size = 10),
-    legend.text = element_text(size = 12),
-    title = element_text(size = 12),
-    plot.margin = margin(1, 1, 0, 0.5, "cm")
-  )
-
-# Sensitivity 2: Time periods 
-fig_sens_2 <- plot_observed_rr(quarter = "2014-01-01", "new", "prev") +
+# Sensitivity 1: Time periods 
+fig_sens_1 <- plot_observed_rr(quarter = "2014-01-01", "new", "prev") +
   geom_line(
     data = compiled_results[["nat_qrt"]] %>%
       filter(model == "sp_2014" & case_type == case_type),
@@ -227,21 +173,25 @@ fig_sens_2 <- plot_observed_rr(quarter = "2014-01-01", "new", "prev") +
     date_labels = "%Y" 
   ) +
   xlab("Quarter") +
-  ylab("") +
-  ggtitle("B) Comparing time periods") + 
+  ylab("Percent with RR-TB") +
+  ggtitle("A) Comparing time periods") + 
   scale_color_manual(
+    name = "Case type",
+    labels = c(
+      "New",
+      "Previous"
+    ),
     values = c(
       new_color,
       prev_color
-    ), 
-    guide = FALSE
+    )
   ) +
   scale_size(
-    range = c(0.5, 5),
-    guide = FALSE
-  ) +
+    name = "Observed number of cases tested with Xpert",
+    range = c(0.5, 5) 
+  )  +
   scale_linetype_manual(
-    name = "Panel B: Time period",
+    name = "Panel A: Time period",
     labels = c(
       "sp_2014" = "2014-2023",
       "sp_2017" = "Reference (2017-2023)"
@@ -259,7 +209,63 @@ fig_sens_2 <- plot_observed_rr(quarter = "2014-01-01", "new", "prev") +
     title = element_text(size = 12),
     plot.margin = margin(1, 0, 0, 0.5, "cm")
   )
- 
+
+
+## Sensitivity 2: Specifications
+fig_sens_2 <- plot_observed_rr(quarter = "2017-01-01", "new", "prev") %>%
+  plot_model(agg_level = "nat_qrt", model_name = "sp_2017") %>%
+  plot_model(agg_level = "nat_qrt", model_name = "sens_1") %>%
+  plot_model(agg_level = "nat_qrt", model_name = "sens_2") +
+  scale_y_continuous(
+    expand = c(0, 0), 
+    limits = c(0, 10.5),
+    labels = scales::label_percent(scale = 1)
+  ) +
+  scale_x_date(
+    date_breaks = "1 year", 
+    date_labels = "%Y" 
+  ) +
+  xlab("Quarter") +
+  ylab("") +
+  ggtitle("B) Comparing specifications") +
+  scale_color_manual(
+    name = "Case type",
+    labels = c(
+      "New",
+      "Previous"
+    ),
+    values = c(
+      new_color,
+      prev_color
+    ), 
+    guide = FALSE
+  ) +
+  scale_size(
+    name = "Observed number of cases tested with Xpert",
+    range = c(0.5, 5), 
+    guide = FALSE
+  ) +
+  scale_linetype_manual(
+    name = "Panel B: Specification",
+    labels = c(
+      "sp_2017" = "Reference",
+      "sens_1" = "Additional patient covariates",
+      "sens_2" = "Time-varying selection"
+    ),
+    values = c(
+      "sp_2017" = "solid",
+      "sens_1" = "dashed",
+      "sens_2" = "dotted"
+    )
+  ) + 
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(size = 8),
+    axis.text.y = element_text(size = 10),
+    legend.text = element_text(size = 12),
+    title = element_text(size = 12),
+    plot.margin = margin(1, 1, 0, 0.5, "cm")
+  )
 
 
 
