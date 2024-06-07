@@ -200,15 +200,15 @@ data_total <- data.frame(
 # Make plot ---------------------------------------------------------------
 fig_nat_imp <- ggplot() +
   # 1. Plot new cases
-  geom_ribbon(
-    data = data_type %>%
-      filter(case_type == "new"),
-    aes(x = diag_qrt, ymin = projected.pct_lci, ymax = projected.pct_hci, color = "Projected"), alpha = 0.5, fill = "lightgray", color = NA
-  ) +
   geom_line(
     data = data_type %>%
       filter(case_type == "new"),
     aes(x = diag_qrt, y = projected.pct, color = "Projected")
+  ) +
+  geom_ribbon(
+    data = data_type %>%
+      filter(case_type == "new"),
+    aes(x = diag_qrt, ymin = projected.pct_lci, ymax = projected.pct_hci, color = "Projected"), alpha = 0.5, fill = "lightgray", color = NA
   ) +
   geom_point(
     data = who_data_new,
