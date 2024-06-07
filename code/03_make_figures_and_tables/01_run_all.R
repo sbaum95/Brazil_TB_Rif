@@ -7,8 +7,8 @@
 source("code/dependencies.R")
 
 # Create file output params
-file_version_load <- "20240526"
-file_version_save <- "20240531"
+file_version_load <- "20240604"
+file_version_save <- "20240604"
 
 # Load relevant data  ------------------------------------------------
 load(paste0("output/compiled_results_", file_version_load, ".Rdata"))
@@ -52,7 +52,7 @@ ggsave(fig_sens, filename = paste0("output/figures_and_tables/fig_", file_versio
 
 # Figure 2 - Bias between model and observed
 source("code/03_make_figures_and_tables/fig_bias.R")
-ggsave(fig_bias, filename = paste0("output/figures_and_tables/fig_", file_version_save, "_bias.png"), width = 9, height = 4)
+ggsave(fig_bias, filename = paste0("output/figures_and_tables/fig_", file_version_save, "_bias.png"), width = 10, height = 4)
 
 # Figure 3 - National incidence + WHO comparisons
 source("code/03_make_figures_and_tables/fig_results_national_WHO.R")
