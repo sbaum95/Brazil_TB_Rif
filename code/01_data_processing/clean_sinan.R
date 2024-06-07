@@ -107,13 +107,13 @@ load_and_clean_sinan <- function() {
     )
 
   # Clean age: 0-4 YOs who have schooling, Remove individuals who are over 100
-  sinan_tmp <- sinan_tmp %>%
-    mutate(
-      age = if_else((age_idade <= 4 & cs_escol_n %in% c("4", "5", "6", "7", "8")) | age_idade > 100, NA, age_idade),
-      age_flag = if_else((age_idade <= 4 & cs_escol_n %in% c("4", "5", "6", "7", "8")), "0-4 w/ school",
-        if_else(age_idade > 100, "> 100", "age_idade")
-      )
-    )
+  # sinan_tmp <- sinan_tmp %>%
+  #   mutate(
+  #     age = if_else((age_idade <= 4 & cs_escol_n %in% c("4", "5", "6", "7", "8")) | age_idade > 100, NA, age_idade),
+  #     age_flag = if_else((age_idade <= 4 & cs_escol_n %in% c("4", "5", "6", "7", "8")), "0-4 w/ school",
+  #       if_else(age_idade > 100, "> 100", "age_idade")
+  #     )
+  #   )
 
   # Finalize age categories
   sinan_tmp$age_cat <- case_when(
