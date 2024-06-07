@@ -18,7 +18,7 @@ fig_state <- function(state_list, model_name, type = NULL) {
     # Add line for observed incidence for each model (2017-2019)
     geom_line(aes(x = diag_qrt, y = obs_inc, color = "Observed (Xpert Only)"), alpha = 0.6) +
     # Add line for projected incidence for each model (2017-2019)
-    geom_ribbon(aes(x = diag_qrt, ymin = inc_lci, ymax = inc_hci, color = "Projected"), alpha = 0.4, fill = "lightgray", color = NA) +
+    geom_ribbon(aes(x = diag_qrt, ymin = inc_lci, ymax = inc_hci, color = "Projected"), alpha = 0.2, fill = projected_color, color = NA) +
     geom_line(aes(x = diag_qrt, y = mod_inc, color = "Projected")) +
     scale_y_continuous(
       expand = c(0, 0),
@@ -71,7 +71,7 @@ set_base_aes_specs <- function(by_state, type) {
       scale_color_manual(
         name = "",
         labels = c(
-          "Observed (Xpert Only)",
+          "Naïve (Xpert Only)",
           "Projected"
         ),
         values = c("black", pal[1])
