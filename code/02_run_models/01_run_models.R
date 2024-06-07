@@ -124,7 +124,7 @@ if ("sp_2014_new" %in% models_to_run) {
     k_sp = 50
   )
 
-  save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
+  save(fitted_models, file = paste0("output/fitted_models_", file_version_save, ".Rdata"))
 
   tictoc::toc()
 }
@@ -146,7 +146,7 @@ if ("sp_2014_prev" %in% models_to_run) {
 
   tictoc::toc()
 
-  save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
+  save(fitted_models, file = paste0("output/fitted_models_", file_version_save, ".Rdata"))
 }
 
 
@@ -166,7 +166,7 @@ if ("sp_2017_new" %in% models_to_run) {
     k_sp = 50
   )
 
-  save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
+  save(fitted_models, file = paste0("output/fitted_models_", file_version_save, ".Rdata"))
 
   tictoc::toc()
 }
@@ -188,7 +188,7 @@ if ("sp_2017_prev" %in% models_to_run) {
   )
   tictoc::toc()
 
-  save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
+  save(fitted_models, file = paste0("output/fitted_models_", file_version_save, ".Rdata"))
 }
 
 # Sensitivity Analyses ----------------------------------------------------
@@ -214,7 +214,7 @@ if ("sens_1_new" %in% models_to_run) {
 
   tictoc::toc()
 
-  save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
+  save(fitted_models, file = paste0("output/fitted_models_", file_version_save, ".Rdata"))
 }
 
 if ("sens_1_prev" %in% models_to_run) {
@@ -234,7 +234,7 @@ if ("sens_1_prev" %in% models_to_run) {
     k_sp = 50
   )
   tictoc::toc()
-  save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
+  save(fitted_models, file = paste0("output/fitted_models_", file_version_save, ".Rdata"))
 }
 
 
@@ -255,7 +255,7 @@ if ("sens_2_new" %in% models_to_run) {
 
   tictoc::toc()
 
-  save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
+  save(fitted_models, file = paste0("output/fitted_models_", file_version_save, ".Rdata"))
 }
 
 if ("sens_2_prev" %in% models_to_run) {
@@ -274,5 +274,5 @@ if ("sens_2_prev" %in% models_to_run) {
 
   tictoc::toc()
 
-  save(fitted_models, file = paste0("output/fitted_models_", file_version, ".Rdata"))
+  save(fitted_models, file = paste0("output/fitted_models_", file_version_save, ".Rdata"))
 }
