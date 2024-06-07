@@ -143,3 +143,8 @@ prev_model_list[["multi_result"]] <-  glm(result ~ sex + tratamento + hiv_status
                                          family = binomial (link = "logit"), 
                                          data = mdf_prev_ind %>% filter(tested == "tested"))
 
+
+# Table notes: Missing
+count(subset(mdf_new_ind, age_cat == "missing")) + count(subset(mdf_prev_ind, age_cat == "missing"))
+count(subset(mdf_new_ind, sex == "missing")) + count(subset(mdf_prev_ind, sex == "missing"))
+count(subset(mdf_new_ind, hiv_status == "missing")) + count(subset(mdf_prev_ind, hiv_status == "missing"))
