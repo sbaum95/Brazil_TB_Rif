@@ -31,7 +31,7 @@ fig_bias <- ggplot(data = compiled_results[["nat_qrt"]] %>%
   ylab("Ratio of projected to naive prevalence") + 
   theme_bw() + 
   theme(strip.background = element_blank(),
-        strip.text = element_text(size = 16),
+        strip.text = element_text(size = 12),
         axis.text.x  = element_text(size = 9), 
         axis.text.y  = element_text(size = 9), 
         legend.position = "none") +
