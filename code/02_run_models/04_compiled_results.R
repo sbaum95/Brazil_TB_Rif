@@ -5,8 +5,8 @@
 # Description: Compile fitted values and uncertainty intervals for all models
 
 ## Load data ---------------------------------------------------------------
-load(paste0("output/fitted_values_", file_version, ".Rdata"))
-load(paste0("output/intervals_", file_version, ".Rdata"))
+load(paste0("output/fitted_values_", file_version_load, ".Rdata"))
+load(paste0("output/intervals_", file_version_load, ".Rdata"))
 
 ## Load state population for 2010
 pop_UF <- read_excel("data/Brazil_population_UF.xls", skip = 6) %>%
@@ -241,13 +241,13 @@ compile_results <- function(agg_level, model_list) {
 compiled_results <- list()
 
 compiled_results[["nat_yr"]] <- compile_results(agg_level = "nat_yr", model_list = model_list)
-save(compiled_results, file = paste0("output/compiled_results_", file_version, ".Rdata"))
+save(compiled_results, file = paste0("output/compiled_results_", file_version_save, ".Rdata"))
 
 compiled_results[["nat_qrt"]] <- compile_results(agg_level = "nat_qrt", model_list = model_list)
-save(compiled_results, file = paste0("output/compiled_results_", file_version, ".Rdata"))
+save(compiled_results, file = paste0("output/compiled_results_", file_version_save, ".Rdata"))
 
 compiled_results[["state_yr"]] <- compile_results(agg_level = "state_yr", model_list = model_list)
-save(compiled_results, file = paste0("output/compiled_results_", file_version, ".Rdata"))
+save(compiled_results, file = paste0("output/compiled_results_", file_version_save, ".Rdata"))
 
 compiled_results[["state_qrt"]] <- compile_results(agg_level = "state_qrt", model_list = model_list)
-save(compiled_results, file = paste0("output/compiled_results_", file_version, ".Rdata"))
+save(compiled_results, file = paste0("output/compiled_results_", file_version_save, ".Rdata"))
