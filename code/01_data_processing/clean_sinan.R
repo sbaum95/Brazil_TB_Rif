@@ -201,7 +201,16 @@ load_and_clean_sinan <- function() {
       pop_imig = if_else(pop_imig == 1, "yes",
         if_else(pop_imig == 2, "no", NA)
       ),
-      pop_imig = ifelse(is.na(pop_imig), "missing", pop_imig) %>% as.factor() %>% relevel(ref = "no")
+      pop_imig = ifelse(is.na(pop_imig), "missing", pop_imig) %>% as.factor() %>% relevel(ref = "no"), 
+      # Education level 
+      cs_escol_n = case_when(cs_escol_n == 0 ~ "illiterate", 
+                             cs_escol_n >= 1 & cs_escol_n <= 3 ~ "some primary school",
+                             cs_escol_n == 4 ~ "completed 8th grade",
+                             cs_escol_n == 5 ~ "some secondary school",
+                             cs_escol_n == 6 ~ "completed secondary school",
+                             cs_escol_n == 7 ~ "some university",
+                             cs_escol_n == 8 ~ "completed university", 
+                             cs_escol_n == 10 ~ NA)
     ) %>%
     mutate(
       state = as.factor(sg_uf_clean),
