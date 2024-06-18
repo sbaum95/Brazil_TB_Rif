@@ -4,7 +4,7 @@ library(readr)
 # Load WHO data -----------------------------------------------------------
 who_mdr <- read_csv("data/MDR_RR_TB_burden_estimates_2024-04-03.csv") %>%
   filter(country == "Brazil") %>%
-  filter(year >= 2017 & year < 2023) %>%
+  filter(year >= 2017 & year <= 2023) %>%
   select(year, e_rr_pct_new, e_rr_pct_new_lo, e_rr_pct_new_hi, e_rr_pct_ret, e_rr_pct_ret_lo, e_rr_pct_ret_hi, e_inc_rr_num, e_inc_rr_num_lo, e_inc_rr_num_hi) %>%
   pivot_longer(
     cols = c(e_rr_pct_new, e_rr_pct_ret),
@@ -40,6 +40,15 @@ who_mdr <- read_csv("data/MDR_RR_TB_burden_estimates_2024-04-03.csv") %>%
     )
   ))
 
+# Repeat 2022 estimates for 2023 
+repeat_2022_mdr <- subset(who_mdr, year == 2022)
+repeat_2022_mdr$year <- 2023
+
+who_mdr <- rbind(who_mdr, repeat_2022_mdr)
+
+
+
+
 who_data_new <- compiled_results[["nat_yr"]] %>%
   filter(model == "sp_2017" & case_type == "new") %>%
   select(year, total_TB_cases) %>%
@@ -52,11 +61,18 @@ who_data_new <- compiled_results[["nat_yr"]] %>%
     who_inc_lo = (who_count_lo / pop_2010) * 100000,
     who_inc_hi = (who_count_hi / pop_2010) * 100000
   ) %>%
-  filter(year < 2023) %>%
+  filter(year <= 2023) %>%
   mutate(
     diag_yr = as.Date(as.character(year), format = "%Y"),
     diag_qrt = floor_date(as_date(diag_yr), "year")
   )
+
+# Repeat 2022 estimates for 2023 
+repeat_2022_new <- subset(who_data_new, year == 2022)
+repeat_2022_new$year <- 2023
+who_data_new <- rbind(who_data_new, repeat_2022_new)
+
+
 
 who_data_prev <- compiled_results[["nat_yr"]] %>%
   filter(model == "sp_2017" & case_type == "prev") %>%
@@ -70,11 +86,17 @@ who_data_prev <- compiled_results[["nat_yr"]] %>%
     who_inc_lo = (who_count_lo / pop_2010) * 100000,
     who_inc_hi = (who_count_hi / pop_2010) * 100000
   ) %>%
-  filter(year < 2023) %>%
+  filter(year <= 2023) %>%
   mutate(
     diag_yr = as.Date(as.character(year), format = "%Y"),
     diag_qrt = floor_date(as_date(diag_yr), "year")
   )
+
+# Repeat 2022 estimates for 2023 
+repeat_2022_prev <- subset(who_data_prev, year == 2022)
+repeat_2022_prev$year <- 2023
+who_data_prev <- rbind(who_data_prev, repeat_2022_prev)
+
 
 who_data_total <- who_mdr %>%
   select(time, year, e_inc_rr_num, e_inc_rr_num_lo, e_inc_rr_num_hi) %>%
@@ -170,7 +192,7 @@ data_total <- data.frame(
                               if_else(diag_qrt > "2017-01-01" & diag_qrt < "2020-01-01", sum(fitted_RR) / 0.89,
                                       if_else(diag_qrt >= "2020-01-01" & diag_qrt < "2021-01-01", sum(fitted_RR) / 0.78,
                                               if_else(diag_qrt >= "2021-01-01" & diag_qrt < "2022-01-01", sum(fitted_RR) / 0.76,
-                                                      if_else(diag_qrt >= "2022-01-01" & diag_qrt < "2023-01-01", sum(fitted_RR) / 0.83, NA)
+                                                      if_else(diag_qrt >= "2022-01-01", sum(fitted_RR) / 0.83, NA)
                                               )
                                       )
                               )
