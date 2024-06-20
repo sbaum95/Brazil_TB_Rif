@@ -2,6 +2,7 @@ source("code/dependencies.R")
 
 library(rstan)
 options(digits=4)
+options(scipen = 999)
 
 stan_data <- compiled_results[["nat_qrt"]] %>% 
   filter(case_type == "new" & model == "sp_2017") %>% 
@@ -13,7 +14,7 @@ model1dat <- list(
   x = stan_data$time, 
   notif_rr = round(stan_data$fitted_RR, 0), 
   notif_ds = round(stan_data$notif_ds, 0), 
-  log_pop = rep(log(pop_2010), 28)
+  pop = rep(as.integer(pop_2010), 28)
 )
 
 
