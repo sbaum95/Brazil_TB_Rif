@@ -9,7 +9,7 @@ data {
   int                    reentry_rr[n_quarters]; // Reentry RR-TB notifications (modeled from previous paper)
   int                    relapse_rr[n_quarters]; // Relapse RR-TB notifications 
   
-  vector[n_quarters]     pop; // Log population (2010 Census)
+  vector[n_quarters]     pop; // Population (2010 Census)
   real                   pr_tested[n_quarters]; // Fraction of cases tested with Xpert
 }
 
@@ -34,9 +34,9 @@ transformed parameters{
   matrix<lower=0>[n_quarters, 1] rr_second_line;
   
   // Set initial parameters
-    rr_act_inc[1,1] = 955 * (1/0.5); // notif_rr * (1/pr_notified)
+    rr_act_inc[1,1] = notif_rr[1] * (1/pr_notified); 
     
-    rr_lat_inc[1,1] = rr_act_inc[1,1] * (1/0.01); // # active * (1/pr_lat_to_act)
+    rr_lat_inc[1,1] = rr_act_inc[1,1] * (1/pr_lat_to_act); // rr_act_inc[1,1] * (1/pr_lat_to_act)
   
     rr_inc_rate[1,1] = beta_rr * ((rr_lat_inc[1,1] +  rr_act_inc[1,1])/pop[1]); // Prevalence in 2017
     
@@ -78,7 +78,7 @@ transformed parameters{
 model {
   
   //beta_rr ~ ;
-  pr_lat_to_act ~ normal(0.05, 0.01);
+  pr_lat_to_act ~ normal(0.9, 0.05);
   pr_notified ~ normal(0.9, 0.05);
   
   // Model new RR-TB notifications
