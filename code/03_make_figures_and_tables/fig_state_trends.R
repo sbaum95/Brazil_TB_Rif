@@ -37,7 +37,7 @@ set_base_aes_specs <- function(by_state, type) {
       ) +
       xlab("Year") +
       ylab("RR-TB cases per 100,000 person-years") +
-      ggtitle("A) New Cases") +
+      ggtitle("A) New") +
       scale_size(
         range = c(0.5, 5)
       ) +
@@ -63,7 +63,7 @@ set_base_aes_specs <- function(by_state, type) {
       ) +
       xlab("Year") +
       ylab("RR-TB cases per 100,000 person-years") +
-      ggtitle("B) Previous Cases") +
+      ggtitle("B) Previously Treated") +
 
       scale_size(
         range = c(0.5, 5)
@@ -71,8 +71,10 @@ set_base_aes_specs <- function(by_state, type) {
       scale_color_manual(
         name = "",
         labels = c(
-          "Naïve (Xpert Only)",
-          "Projected"
+          "Observed (Xpert Only)" = "Naïve (Xpert Only)",
+          "Projected" = "Modeled"
+    
+          
         ),
         values = c("black", pal[1])
       ) +
