@@ -131,7 +131,7 @@ fig_sp <- plot_observed_rr(quarter = "2017-01-01", "new", "prev") +
     name = "Case type",
     labels = c(
       "New",
-      "Previous"
+      "Previously Treated"
     ),
     values = c(
       new_color,
@@ -179,7 +179,7 @@ fig_sens_1 <- plot_observed_rr(quarter = "2014-01-01", "new", "prev") +
     name = "Case type",
     labels = c(
       "New",
-      "Previous"
+      "Previously Treated"
     ),
     values = c(
       new_color,
@@ -232,7 +232,7 @@ fig_sens_2 <- plot_observed_rr(quarter = "2017-01-01", "new", "prev") %>%
     name = "Case type",
     labels = c(
       "New",
-      "Previous"
+      "Previously Treated"
     ),
     values = c(
       new_color,
