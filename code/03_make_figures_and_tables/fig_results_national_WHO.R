@@ -225,12 +225,12 @@ fig_nat_imp <- ggplot() +
   geom_line(
     data = data_type %>%
       filter(case_type == "new"),
-    aes(x = diag_qrt, y = projected.pct, color = "Projected")
+    aes(x = diag_qrt, y = projected.pct, color = "Modeled")
   ) +
   geom_ribbon(
     data = data_type %>%
       filter(case_type == "new"),
-    aes(x = diag_qrt, ymin = projected.pct_lci, ymax = projected.pct_hci, color = "Projected"), alpha = 0.5, fill = "lightgray", color = NA
+    aes(x = diag_qrt, ymin = projected.pct_lci, ymax = projected.pct_hci, color = "Modeled"), alpha = 0.5, fill = "lightgray", color = NA
   ) +
   geom_point(
     data = who_data_new,
@@ -267,12 +267,12 @@ fig_nat_imp <- ggplot() +
   geom_line(
     data = data_type %>%
       filter(case_type == "prev"),
-    aes(x = diag_qrt, y = projected.pct, color = "Projected")
+    aes(x = diag_qrt, y = projected.pct, color = "Modeled")
   ) +
   geom_ribbon(
     data = data_type %>%
       filter(case_type == "prev"),
-    aes(x = diag_qrt, ymin = projected.pct_lci, ymax = projected.pct_hci, color = "Projected"), alpha = 0.5, fill = "lightgray", color=NA
+    aes(x = diag_qrt, ymin = projected.pct_lci, ymax = projected.pct_hci, color = "Modeled"), alpha = 0.5, fill = "lightgray", color=NA
   ) +
   geom_point(
     data = who_data_prev,
@@ -282,7 +282,7 @@ fig_nat_imp <- ggplot() +
     data = who_data_prev,
     aes(x = diag_qrt, ymin = pct_lo, ymax = pct_hi, color = "WHO"), width = 75, alpha = 0.6
   ) +
-  ggtitle("Previous") +
+  ggtitle("Previously Treated") +
   scale_y_continuous(
     expand = c(0, 0),
     limits = c(0, 25),
@@ -310,20 +310,20 @@ fig_nat_imp <- ggplot() +
   # Observed - Xpert + DST
   geom_line(
     data = data_total,
-    aes(x = diag_qrt, y = observed_total_inc, color = "C Observed total")
+    aes(x = diag_qrt, y = observed_total_inc, color = "C Naïve total")
   ) +
   geom_line(
     data = data_total,
-    aes(x = diag_qrt, y = observed_xpert_inc, color = "D Observed xpert")
+    aes(x = diag_qrt, y = observed_xpert_inc, color = "D Naïve xpert")
   ) + 
   # Projected
   geom_line(
     data = data_total,
-    aes(x = diag_qrt, y = projected_inc, color = "B Projected")
+    aes(x = diag_qrt, y = projected_inc, color = "B Modeled")
   ) +
   geom_ribbon(
     data = data_total,
-    aes(x = diag_qrt, ymin = projected_inc_lci, ymax = projected_inc_hci, color = "B Projected"), alpha = 0.5, fill = "lightgray", color=NA
+    aes(x = diag_qrt, ymin = projected_inc_lci, ymax = projected_inc_hci, color = "B Modeled"), alpha = 0.5, fill = "lightgray", color=NA
   ) +
   # CDR
   geom_line(
@@ -341,7 +341,7 @@ fig_nat_imp <- ggplot() +
   ) +
   ggtitle("Total") +
   scale_y_continuous(
-    name = "RR-TB cases per 100,000 persons/year",
+    name = "RR-TB cases per 100,000 person-years",
     expand = c(0, 0),
     limits = c(0, 5)
   ) +
@@ -355,9 +355,9 @@ fig_nat_imp <- ggplot() +
     name = "",
     labels = c(
       "A CDR-inflated" = "CDR-inflated", 
-      "B Projected" = "Projected",
-      "C Observed total" = "Observed (Xpert + DST)",
-      "D Observed xpert" = "Observed (Xpert)",
+      "B Modeled" = "Modeled",
+      "C Naïve total" = "Naïve (Xpert + DST)",
+      "D Naïve xpert" = "Naïve (Xpert)",
       "E WHO" = "WHO"
     ),
     values = c(cdr_color, projected_color, observed_all_color, observed_xpert_color, who_color)
