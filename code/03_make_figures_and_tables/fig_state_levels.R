@@ -54,11 +54,11 @@ shp_new <- ggplot() +
   geom_sf(data = shp_new_2023, aes(fill = mod_pct)) +
   geom_sf_text(data = shp_centroids, aes(label = SIGLA), size = 3) +
   scale_fill_material(
-    name = "Projected RR-TB positivity",
+    name = "Modeled prevalence",
     "teal",
     labels = scales::percent_format(scale = 1)
   ) +
-  ggtitle("A) New Cases") + 
+  ggtitle("A) New") + 
   theme_void() +
   theme(
     title = element_text(size = 14),
@@ -74,11 +74,11 @@ shp_prev <- ggplot(shp_prev_2023) +
   geom_sf(aes(fill = mod_pct)) +
   geom_sf_text(data = shp_centroids, aes(label = SIGLA), size = 3) +
   scale_fill_material(
-    name = "Projected RR-TB positivity",
+    name = "Modeled prevalence",
     "teal",
     labels = scales::percent_format(scale = 1)
   ) +
-  ggtitle("B) Previous Cases") + 
+  ggtitle("B) Previously Treated") + 
   theme_void() +
   theme(
     title = element_text(size = 14),
@@ -100,7 +100,7 @@ fig_new <- ggplot(data = state_new_2023) +
   geom_point(aes(x = reorder(uf_name_code, mod_pct), y = mod_pct, color = region)) +
   geom_errorbar(aes(x = uf_name_code, ymin = pct_lci, ymax = pct_hci, color = region), alpha = 0.5) +
   xlab("State") +
-  ylab("Projected RR-TB positivity") +
+  ylab("Modeled prevalence") +
   theme_bw() +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +
   scale_color_manual(
@@ -121,7 +121,7 @@ fig_prev <- ggplot(data = state_prev_2023) +
   geom_point(aes(x = reorder(uf_name_code, mod_pct), y = mod_pct, color = region)) +
   geom_errorbar(aes(x = uf_name_code, ymin = pct_lci, ymax = pct_hci, color = region), alpha = 0.5) +
   xlab("State") +
-  ylab("Projected RR-TB positivity") +
+  ylab("Modeled prevalence") +
   theme_bw() +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +
   theme(
