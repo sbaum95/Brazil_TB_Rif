@@ -28,7 +28,7 @@ fig_bias <- ggplot(data = compiled_results[["nat_qrt"]] %>%
   ) + 
   geom_hline(yintercept = 1, linetype = "dashed", color = "black") + 
   xlab("Quarter") + 
-  ylab("Ratio of projected to naive prevalence") + 
+  ylab("Ratio of modeled to naïve prevalence") + 
   theme_bw() + 
   theme(strip.background = element_blank(),
         strip.text = element_text(size = 12),
@@ -37,11 +37,11 @@ fig_bias <- ggplot(data = compiled_results[["nat_qrt"]] %>%
         legend.position = "none") +
   scale_color_manual(name="Case type",
                      labels=c("New",
-                              "Previous"),
+                              "Previously Treated"),
                      values=c(new_color, prev_color)) + 
   scale_fill_manual(name="Case type",
                      labels=c("New",
-                              "Previous"),
+                              "Previously Treated"),
                      values=c(new_color, prev_color))
 
 
