@@ -210,7 +210,8 @@ load_and_clean_sinan <- function() {
                              cs_escol_n == 6 ~ "completed secondary school",
                              cs_escol_n == 7 ~ "some university",
                              cs_escol_n == 8 ~ "completed university", 
-                             cs_escol_n == 10 ~ NA)
+                             cs_escol_n %in% c(9, 10) ~ "missing", 
+                             is.na(cs_escol_n) ~ "missing") %>% as.factor()
     ) %>%
     mutate(
       state = as.factor(sg_uf_clean),
