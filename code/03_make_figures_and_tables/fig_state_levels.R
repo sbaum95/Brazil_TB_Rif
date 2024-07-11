@@ -138,4 +138,4 @@ fig_prev <- ggplot(data = state_prev_2023) +
 
 
 # Combine plots 
-fig_combined_level <- gridExtra::grid.arrange(shp_new, fig_new, shp_prev, fig_prev, nrow = 2, ncol = 2, heights = c(1, 1), widths = c(1, 2))
+fig_state_level <- gridExtra::grid.arrange(shp_new, fig_new, shp_prev, fig_prev, nrow = 2, ncol = 2, heights = c(1, 1), widths = c(1, 2))
