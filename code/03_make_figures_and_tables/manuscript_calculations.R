@@ -18,23 +18,40 @@ pop_2010 = sum(pop_UF$pop_2010)
 state_codes <- read_excel("data/StateCodes.xlsx")
 
 
+# Abstract ----------------------------------------------------------------
+# Range of estimated prevalence by case type
+compiled_results[["nat_yr"]] %>% 
+  filter(model == "sp_2017") %>% 
+  group_by(year, case_type) %>% 
+  summarize(mod_prev = fitted_RR/total_TB_cases, 
+            naive_prev = obs_RR/obs_num_tested, 
+            pct_difference = (mod_prev-naive_prev)/naive_prev *100) %>% 
+  group_by(case_type) %>% 
+  summarize(min = min(pct_difference), 
+            max = max(pct_difference))
+
 
 
 # Methods ---------------------------------------------------------------
 
 # Exclusion criteria
 tabyl(sinan_tmp, tratamento)
+tabyl(sinan_tmp, test_molec)
 
 sinan_tmp %>% 
   summarize(
     new = sum(tratamento == 1),
-            previous = sum(tratamento %in% c("2", "3")),
-            relapse = sum(tratamento == "2"),
-            retreat = sum(tratamento == "3"),
-            unknown_pct = round((sum(tratamento == "4")/n())*100, 2),
-            transfer_pct = round((sum(tratamento == "5")/n())*100, 2),
-            postmortem_pct = round((sum(tratamento == "6")/n())*100, 2),
-            misdiag_pct = round((sum(situa_ence == "06", na.rm = TRUE)/n())*100, 2))
+    previous = sum(tratamento %in% c("2", "3")),
+    relapse = sum(tratamento == "2"),
+    retreat = sum(tratamento == "3"),
+    unknown = sum(tratamento == "4"), 
+    unknown_pct = round((sum(tratamento == "4")/n())*100, 2),
+    transfer = sum(tratamento == "5"), 
+    transfer_pct = round((sum(tratamento == "5")/n())*100, 2),
+    postmortem = sum(tratamento == "6"), 
+    postmortem_pct = round((sum(tratamento == "6")/n())*100, 2),
+    misdiag = sum(situa_ence == "06", na.rm = TRUE), 
+    misdiag_pct = round((sum(situa_ence == "06", na.rm = TRUE)/n())*100, 2))
 
 
 # Final sample size
@@ -132,6 +149,8 @@ compiled_results[["nat_yr"]] %>%
 
 # Figure 1B ---------------------------------------------------------------
 
+## Get total incidence from WHO figure
+
 # ## Obs positivity in 2014 - New cases
 # sum(subset(compiled_results[["nat_yr"]], model == "sp_2014" & case_type == "new" & year %in% c("2014"))[["obs_RR"]])/sum(subset(compiled_results[["nat_yr"]], model == "sp_2014" & case_type == "new" & year %in% c("2014"))[["obs_num_tested"]]) 
 # 
@@ -173,16 +192,16 @@ compiled_results[["nat_yr"]] %>%
   mutate(case_type = if_else(case_type == "new", "New", "Previously Treated")) %>%
   group_by(case_type) %>% 
   mutate(
-    prev_mod = (fitted_RR/pop_2010)*100000,
-    prev_nav = ((obs_RR*(1/obs_pct_tested))/pop_2010)*100000, 
+    prev_mod = (fitted_RR/pop_2010),
+    prev_nav = ((obs_RR*(1/obs_pct_tested))/pop_2010), 
     bias_prev = prev_mod/prev_nav) %>% 
   summarize(
+    bias_ann_chg = (bias_prev - lag(bias_prev)), 
+    avg = mean(bias_ann_chg, na.rm = TRUE),
     bias_prev_chg = ((bias_prev[year == "2023"] - bias_prev[year == "2017"])/bias_prev[year == "2017"])*100)
 
 
 # Figure 3 ----------------------------------------------------------------
-
-# Total RR-TB incidence among notified TB cases in 2023 (Point estimate and UI)
 total <- data.frame(
   pop_2010 = pop_2010, 
   projected = compiled_results[["nat_yr"]] %>%
@@ -195,13 +214,24 @@ total <- data.frame(
   cdr = compiled_results[["nat_yr"]] %>%
     filter(model == "sp_2017") %>%
     group_by(year) %>%
-    summarize(cases = if_else(year <= "2017-01-01", sum(fitted_RR)/0.87, sum(fitted_RR)/0.89)) %>% 
+    # summarize(cases = if_else(year <= "2017-01-01", sum(fitted_RR)/0.87, sum(fitted_RR)/0.89)) %>% 
+    summarize(cases = if_else(year <= "2017-01-01", sum(fitted_RR) / 0.87,
+                              if_else(year > "2017-01-01" & year < "2020-01-01", sum(fitted_RR) / 0.89,
+                                      if_else(year >= "2020-01-01" & year < "2021-01-01", sum(fitted_RR) / 0.78,
+                                              if_else(year >= "2021-01-01" & year < "2022-01-01", sum(fitted_RR) / 0.76,
+                                                      if_else(year >= "2022-01-01", sum(fitted_RR) / 0.83, NA)
+                                              )
+                                      )
+                              )
+    )
+    ) %>% 
     unique()) %>% 
   rename(year = projected.year) %>% 
   select(year, projected.cases, projected.lci, projected.hci, cdr.cases, pop_2010) %>% 
   pivot_longer(cols = c("projected.cases", "cdr.cases", "projected.lci", "projected.hci"), names_to = "var", values_to = "count") %>% 
   mutate(inc = (count/pop_2010)*100000)
 
+# Total RR-TB incidence among notified TB cases in 2023 (Point estimate and UI)
 round(subset(total, year == "2023" & var == "projected.cases")[["inc"]], 2)
 round(subset(total, year == "2023" & var == "projected.lci")[["inc"]], 2)
 round(subset(total, year == "2023" & var == "projected.hci")[["inc"]], 2)
@@ -244,11 +274,16 @@ who_data_prev$e_rr_pct[who_data_prev$year == 2022]
 who_data_prev$pct_lo[who_data_prev$year == 2022]
 who_data_prev$pct_hi[who_data_prev$year == 2022]
 
-# Positivity among new cases in 2023 (Point estimate and UI)
-round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2023" & case_type == "new")[["fitted_RR"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2023" & case_type == "new")[["total_TB_cases"]])*100, 2)
+# Positivity among new cases in 2022 (Point estimate and UI)
+round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["fitted_RR"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["total_TB_cases"]])*100, 2)
+round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["proj_lci"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["total_TB_cases"]])*100, 2)
+round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["proj_hci"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["total_TB_cases"]])*100, 2)
 
-# Positivity among prev cases in 2023 (Point estimate and UI)
-round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2023" & case_type == "prev")[["fitted_RR"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2023" & case_type == "prev")[["total_TB_cases"]])*100, 2)
+
+# Positivity among prev cases in 2022 (Point estimate and UI)
+round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["fitted_RR"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["total_TB_cases"]])*100, 2)
+round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["proj_lci"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["total_TB_cases"]])*100, 2)
+round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["proj_hci"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["total_TB_cases"]])*100, 2)
 
 
 # Figure 4 ----------------------------------------------------------------
@@ -285,6 +320,7 @@ test <- compiled_results[["nat_yr"]] %>%
   mutate(diff_sens_1 = (pct[model == "sp_2017"] - pct[model == "sens_1"]), 
          diff_sens_2 = (pct[model == "sp_2017"] - pct[model == "sens_2"]))
 
+# Percentage point difference 
 mean(test$diff_sens_1[test$case_type == "new"])
 mean(test$diff_sens_1[test$case_type == "prev"])
 
