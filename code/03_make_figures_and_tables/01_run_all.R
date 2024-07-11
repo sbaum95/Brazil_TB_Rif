@@ -76,7 +76,7 @@ write_xlsx(dat_reordered, paste0("output/figures_and_tables/tab1_", file_version
 # Appendix ------------------------------------------------
 
 # Table A1 - Associations between covariates and testing and resistance
-source("code/03_make_figures_and_tables/tab1_covs.R")
+source("code/03_make_figures_and_tables/tabA1_reg.R")
 
 save_new <- stargazer2(new_model_list)
 new_matrix <- read.table(textConnection(save_new), header = FALSE, sep = "\t")
@@ -90,3 +90,6 @@ write.xlsx(prev_matrix, paste0("output/figures_and_tables/tabA1_prev", file_vers
 # tabyl(mdf_new_ind, sex)[[3, 2]] + tabyl(mdf_prev_ind, sex)[[3, 2]]
 # tabyl(mdf_new_ind, hiv_status)[[2, 2]] + tabyl(mdf_prev_ind, hiv_status)[[2, 2]]
 # tabyl(mdf_new_ind, age_cat)[[9, 2]] + tabyl(mdf_prev_ind, age_cat)[[9, 2]]
+
+
+
