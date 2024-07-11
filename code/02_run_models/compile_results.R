@@ -1,8 +1,4 @@
-# Author: Sarah Baum
-# Created: 2024-03-22
-# Updated: 2024-03-25
-
-# Description: Compile fitted values and uncertainty intervals for all models
+# Description: Compile fitted values and uncertainty intervals for all models; Add in observed data 
 
 ## Load data ---------------------------------------------------------------
 load(paste0("output/fitted_values_", file_version_load, ".Rdata"))
@@ -45,6 +41,7 @@ aggregate_fitted_values <- function(model_name, agg_level) {
         agg_level == "state_qrt" ~ paste(state, as.character(diag_qrt), sep = ",")
       )
     ) %>%
+    # Fitted cases = Imputed (Projected probability * number of missing cases) + Non-missing resistant results (Positive)
     summarize(fitted_RR = sum((fitted * (cases - (negative + positive))) + (negative * 0) + positive))
 
   # Rename first column
@@ -84,7 +81,7 @@ aggregate_fitted_values <- function(model_name, agg_level) {
 
 get_observed <- function(model_name, agg_level) {
   if (grepl("new", model_name)) {
-    observed <- sinan_xpert %>%
+    observed <- sinan_tmp %>%
       filter(tratamento %in% c("1")) %>%
       rename("year" = "diag_yr") %>%
       group_by(
@@ -103,7 +100,7 @@ get_observed <- function(model_name, agg_level) {
         obs_pct_pos = obs_RR / obs_num_tested
       )
   } else {
-    observed <- sinan_xpert %>%
+    observed <- sinan_tmp %>%
       filter(tratamento %in% c("2", "3")) %>%
       rename("year" = "diag_yr") %>%
       group_by(
@@ -217,7 +214,8 @@ compile_results <- function(agg_level, model_list) {
   } else {
     results <- left_join(combined_est, observed, by = c("model", "diag_qrt"))
   }
-
+  
+  # Separate model name and case type into two columns
   split_model <- str_match(results$model, "^(.*)_([^_]+)$")
   results$model <- split_model[, 2]
   results$case_type <- split_model[, 3]
