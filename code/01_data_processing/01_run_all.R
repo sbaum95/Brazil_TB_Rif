@@ -15,7 +15,7 @@ covariates_to_pull <- c(
 
 years_to_pull <- c(2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023)
 
-file_version <- "20240711"
+file_version_save <- "20240711"
 
 
 # Clean sinan ----------------------------------------------------
@@ -54,6 +54,6 @@ tictoc::toc()
 
 
 # Write files --------------------------------------------------------------
-save(sinan_tmp, file = paste0("data/sinan_tmp_", file_version, ".Rdata"))
-save(mdf_new_ind, file = paste0("data/mdf_new_ind_tmp_", file_version, ".Rdata"))
-save(mdf_prev_ind, file = paste0("data/mdf_prev_ind_tmp_", file_version, ".Rdata"))
+save(sinan_tmp, file = paste0("data/sinan_tmp_", file_version_save, ".Rdata"))
+save(mdf_new_ind, file = paste0("data/mdf_new_ind_tmp_", file_version_save, ".Rdata"))
+save(mdf_prev_ind, file = paste0("data/mdf_prev_ind_tmp_", file_version_save, ".Rdata"))
