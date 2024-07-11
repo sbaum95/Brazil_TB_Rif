@@ -1,8 +1,4 @@
-# Author: Sarah Baum
-# Created: 2024-03-23
-
-# Description: Cleans SINAN data and then prepares datasets for models. Manually
-# update version of sinan, covariates and years to run, and file version
+# Description: Cleans SINAN data and prepares datasets for models. 
 
 source("code/dependencies.R")
 
@@ -19,7 +15,7 @@ covariates_to_pull <- c(
 
 years_to_pull <- c(2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023)
 
-file_version <- "20240604"
+file_version <- "20240711"
 
 
 # Clean sinan ----------------------------------------------------
