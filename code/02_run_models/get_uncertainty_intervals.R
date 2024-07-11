@@ -1,11 +1,5 @@
-# Author: Sarah Baum
-# Created: 2024-03-22
-# Updated: 2024-05-21
+# Description: Simulate uncertainty intervals for each model at various aggregation levels
 
-# Description: Calculate uncertainty intervals for each model as various aggregation levels
-
-
-# load(paste0("output/fitted_models_", file_version_load,".Rdata"))
 
 # Create functions --------------------------------------------------------
 
@@ -23,17 +17,16 @@ get_sim_preds <- function(model_object, data){
   # the model (ie fit_object).
   lpm <- predict(model_object, newdata = data, type = "lpmatrix")
   
-  ## 3 Simulate from parameter posterior - Draw different coefficients from the
-  ## posterior dist, determined by mu and signma
+  ## 3 Simulate from parameter posterior 
   n.sim <- 1000
   set.seed(1234)
-  sim_pars <- MASS::mvrnorm(n.sim, mu = par_est, Sigma = par_vcv) # check to see whether mean and SD match summary to summary on model 
+  sim_pars <- MASS::mvrnorm(n.sim, mu = par_est, Sigma = par_vcv) 
   
   ## 4 Calc results on transformed variables 
   sim_preds0 <- lpm %*% t(sim_pars) %>% data.frame()
   
   
-  ## 5 get output by state and time 
+  ## 5 Get output by state and time 
   pred_output <- cbind(data, sim_preds0)
   
   return(pred_output)
@@ -49,7 +42,7 @@ get_proj_cases <- function(pred_output){
     mutate(
       # Convert simulated log odds to probabilities
       across(starts_with("X"), ~ plogis(.), .names = "prob_{.col}"), 
-      # Calculate number of cases from simulation 
+      # Calculate number of cases from simulation = Imputed (Projected probability * number of missing cases) + Observed (Resistant results)
       across(starts_with("prob"), (~ . * (cases - (negative + positive)) + (negative * 0) + positive), .names = "proj_{.col}")) %>% 
     select(-c(starts_with("X"), starts_with("prob")))
   
@@ -62,13 +55,11 @@ get_nat_qrt_int <- function(proj_cases) {
   
   proj_nat_qrt <- proj_cases %>% 
     group_by(time, diag_qrt) %>% 
-    # Calculate number of projected RR-TB cases for each simulation 
+    # Calculate total number of projected RR-TB cases for each simulation 
     summarize(across(starts_with("proj"), ~sum(., na.rm = TRUE), .names = "cases_{.col}")) %>% 
     rowwise() %>% 
     summarize(
       diag_qrt = diag_qrt,
-      # Calculate point estimates - mean
-      # proj_mean = rowMeans(across(starts_with("cases"))), 
       # Calculate LCI
       proj_lci = quantile(c_across(starts_with("cases")), probs = 0.025, na.rm = TRUE),
       # Calculate point estimate - median
@@ -83,14 +74,12 @@ get_state_qrt_int <- function(proj_cases) {
   
   proj_state_qrt <- proj_cases %>% 
     group_by(state, time, diag_qrt) %>% 
-    # Calculate number of projected RR-TB cases for each simulation 
+    # Calculate total number of projected RR-TB cases for each simulation 
     summarize(across(starts_with("proj"), ~sum(., na.rm = TRUE), .names = "cases_{.col}")) %>% 
     rowwise() %>% 
     summarize(
       state = state, 
       diag_qrt = diag_qrt, 
-      # Calculate point estimates - mean
-      # proj_mean = rowMeans(across(starts_with("cases"))), 
       # Calculate LCI
       proj_lci = quantile(c_across(starts_with("cases")), probs = 0.025, na.rm = TRUE),
       # Calculate point estimate - median
@@ -116,13 +105,11 @@ get_nat_yr_int <- function(proj_cases) {
                             time > 32 & time <= 36 ~ 2022, 
                             time > 36 & time <= 40 ~ 2023)) %>%
     group_by(year) %>% 
-    # Calculate number of projected RR-TB cases for each simulation 
+    # Calculate total number of projected RR-TB cases for each simulation 
     summarize(across(starts_with("proj"), ~sum(., na.rm = TRUE), .names = "cases_{.col}")) %>% 
     rowwise() %>% 
     summarize(
       year = year,
-      # Calculate point estimates - mean
-      # proj_mean = rowMeans(across(starts_with("cases"))), 
       # Calculate LCI
       proj_lci = quantile(c_across(starts_with("cases")), probs = 0.025, na.rm = TRUE),
       # Calculate point estimate - median
@@ -147,14 +134,12 @@ get_state_yr_int <- function(proj_cases) {
                             time > 32 & time <= 36 ~ 2022, 
                             time > 36 & time <= 40 ~ 2023)) %>%
     group_by(state, year) %>% 
-    # Calculate number of projected RR-TB cases for each simulation 
+    # Calculate total number of projected RR-TB cases for each simulation 
     summarize(across(starts_with("proj"), ~sum(., na.rm = TRUE), .names = "cases_{.col}")) %>% 
     rowwise() %>% 
     summarize(
       state = state, 
       year = year,
-      # Calculate point estimates - mean
-      # proj_mean = rowMeans(across(starts_with("cases"))), 
       # Calculate LCI
       proj_lci = quantile(c_across(starts_with("cases")), probs = 0.025, na.rm = TRUE),
       # Calculate point estimate - median
@@ -197,39 +182,3 @@ get_intervals <- function(model_name) {
   return(intervals)
   
 }
-  
-  
-
-
-
-
-
-# Calculate uncertainty intervals for each model --------------------------
-# intervals <- list()
-# 
-# model_name <- names(fitted_models)
-# 
-# intervals[["sp_2014_new"]] <- get_intervals(model_name = "sp_2014_new")
-# save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
-# 
-# intervals[["sp_2017_new"]] <- get_intervals(model_name = "sp_2017_new")
-# save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
-# 
-# intervals[["sp_2014_prev"]] <- get_intervals(model_name = "sp_2014_prev")
-# save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
-# 
-# intervals[["sp_2017_prev"]] <- get_intervals(model_name = "sp_2017_prev")
-# save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
-# 
-# intervals[["sens_1_new"]] <- get_intervals(model_name = "sens_1_new")
-# save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
-# 
-# intervals[["sens_1_prev"]] <- get_intervals(model_name = "sens_1_prev")
-# save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
-# 
-# intervals[["sens_2_new"]] <- get_intervals(model_name = "sens_2_new")
-# save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
-# 
-# intervals[["sens_2_prev"]] <- get_intervals(model_name = "sens_2_prev")
-# save(intervals, file = paste0("output/intervals_", file_version_save, ".Rdata"))
-
