@@ -101,8 +101,6 @@ tictoc::toc()
 ## Load observed data ---------------------------------------------------------------
 load(paste0("data/sinan_tmp_", file_version_load,".Rdata"))
 
-sinan_xpert <- sinan_tmp
-
 model_list <- names(fitted_values)
 
 ## Output compiled results -------------------------------------------------
