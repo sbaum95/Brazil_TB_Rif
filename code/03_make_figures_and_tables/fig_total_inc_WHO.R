@@ -1,5 +1,3 @@
-library(RColorBrewer)
-library(readr)
 
 # Load WHO data -----------------------------------------------------------
 who_mdr <- read_csv("data/MDR_RR_TB_burden_estimates_2024-04-03.csv") %>%
