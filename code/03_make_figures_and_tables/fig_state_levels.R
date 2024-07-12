@@ -1,4 +1,3 @@
-library(ggsci)
 
 # Pull regions
 state_codes <- read_excel("data/StateCodes.xlsx")
