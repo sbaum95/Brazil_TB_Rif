@@ -64,7 +64,6 @@ ggsave(fig_state_trends, filename = paste0("output/figures_and_tables/fig5_", fi
 
 
 
-
 # Tables  ------------------------------------------------
 
 # Table 1 - Descriptive characteristics of notified TB cases (2017-2023)
@@ -80,16 +79,8 @@ source("code/03_make_figures_and_tables/tabA1_reg.R")
 
 save_new <- stargazer2(new_model_list)
 new_matrix <- read.table(textConnection(save_new), header = FALSE, sep = "\t")
-write.xlsx(new_matrix, paste0("output/figures_and_tables/tabA1_new", file_version_save, "_reg.xlsx"), colNames = FALSE, rowNames = FALSE)
+write.xlsx(new_matrix, paste0("output/figures_and_tables/tabA1_new", file_version_save, "_reg.xlsx"), colNames = TRUE, rowNames = TRUE)
 
 save_prev <- stargazer2(prev_model_list)
 prev_matrix <- read.table(textConnection(save_prev), header = FALSE, sep = "\t")
 write.xlsx(prev_matrix, paste0("output/figures_and_tables/tabA1_prev", file_version_save, "_reg.xlsx"), colNames = FALSE, rowNames = FALSE)
-
-# Missing count for Table 1 notes (there are no missing for health unit)
-# tabyl(mdf_new_ind, sex)[[3, 2]] + tabyl(mdf_prev_ind, sex)[[3, 2]]
-# tabyl(mdf_new_ind, hiv_status)[[2, 2]] + tabyl(mdf_prev_ind, hiv_status)[[2, 2]]
-# tabyl(mdf_new_ind, age_cat)[[9, 2]] + tabyl(mdf_prev_ind, age_cat)[[9, 2]]
-
-
-
