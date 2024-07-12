@@ -1,6 +1,4 @@
 source("code/dependencies.R")
-library(stargazer)
-library(openxlsx)
 
 
 ## Write function that produces univariate coefficients for each covariate 
