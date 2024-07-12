@@ -1,6 +1,5 @@
 library(tidyverse)
 library(here)
-library(bannerCommenter)
 
 library(readxl)
 library(readr)
@@ -17,7 +16,13 @@ library(tmap)
 library(janitor)
 
 library(mgcv)
-# library(gratia)
+library(gratia)
 # library(itsadug)
 # library(tidygam)
 library(rlang)
+library(ggsci)
+library(writexl)
+library(stargazer)
+library(openxlsx)
+library(RColorBrewer)
+
