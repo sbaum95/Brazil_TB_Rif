@@ -1,7 +1,3 @@
-source("code/dependencies.R")
-
-library(writexl)
-
 # Select covariates to include
 covs <- c("result", "tested", "age_idade", "sex", "hiv_status", "tratamento",
           "pop_rua", "pop_liber", "agravtabac", "agravalcoo", "agravdroga",
@@ -48,7 +44,7 @@ dat_type <- dat %>%
             "indigenous" = round(mean(race == "indigenous", na.rm = TRUE), 2),
             # "missing" = round(mean(race == "missing", na.rm = TRUE), 2),
             "white" = round(mean(race == "white", na.rm = TRUE), 2), 
-            "illiterate" = round(mean(cs_escol_n == "illiterate", na.rm = TRUE), 2), 
+            "No education" = round(mean(cs_escol_n %in% c("illiterate", "NA - child"), na.rm = TRUE), 2), 
             "some primary school"  = round(mean(cs_escol_n == "some primary school", na.rm = TRUE), 2),
             "completed 8th grade"  = round(mean(cs_escol_n == "completed 8th grade", na.rm = TRUE), 2),
             "some secondary school" = round(mean(cs_escol_n == "some secondary school", na.rm = TRUE), 2),
@@ -98,7 +94,7 @@ dat_overall <- dat %>%
             "indigenous" = round(mean(race == "indigenous", na.rm = TRUE), 2),
             # "missing" = round(mean(race == "missing", na.rm = TRUE), 2),
             "white" = round(mean(race == "white", na.rm = TRUE), 2), 
-            "illiterate" = round(mean(cs_escol_n == "illiterate", na.rm = TRUE), 2), 
+            "No education" = round(mean(cs_escol_n %in% c("illiterate", "NA - child"), na.rm = TRUE), 2), 
             "some primary school"  = round(mean(cs_escol_n == "some primary school", na.rm = TRUE), 2),
             "completed 8th grade"  = round(mean(cs_escol_n == "completed 8th grade", na.rm = TRUE), 2),
             "some secondary school" = round(mean(cs_escol_n == "some secondary school", na.rm = TRUE), 2),
@@ -138,7 +134,7 @@ rownames(dat_df)[rownames(dat_df) == "hu_low"]<- "Low complexity"
 rownames(dat_df)[rownames(dat_df) == "hu_med"]<- "Medium complexity"
 rownames(dat_df)[rownames(dat_df) == "hu_high"]<- "High complexity"
 rownames(dat_df)[rownames(dat_df) == "hu_other"]<- "Other"
-rownames(dat_df)[rownames(dat_df) == "illiterate"]<- "Illiterate"
+rownames(dat_df)[rownames(dat_df) == "No education"]<- "No education"
 rownames(dat_df)[rownames(dat_df) == "some primary school"]<- "Some primary school"
 rownames(dat_df)[rownames(dat_df) == "completed 8th grade"]<- "Completed 8th grade"
 rownames(dat_df)[rownames(dat_df) == "some secondary school"]<- "Some secondary school"
@@ -179,7 +175,7 @@ dat_reordered <- dat_reordered[rownames(dat_reordered) != "n", ]
 # Order rows
 order <- c("Variable (N = n)" , "Conclusive Xpert resistance result", "Rifampicin resistance indicated", 
                              "Male", "Age", "Brown", "White", "Black", "Asian", "Indigenous", "HIV Positive", "Has diabetes",
-                             "Low complexity", "Medium complexity", "High complexity", "Other", "Illiterate", "Some primary school", "Completed 8th grade", "Some secondary school", 
+                             "Low complexity", "Medium complexity", "High complexity", "Other", "No education", "Some primary school", "Completed 8th grade", "Some secondary school", 
                              "Completed secondary school", "Some university", "Completed university", 
                              "Immigrant", "Homeless", "Incarcerated", "Uses tobacco", "Uses alcohol", "Uses illicit drugs")
 
