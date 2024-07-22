@@ -19,20 +19,6 @@ get_reg_output <- function(case_type, var, covariates, data){
   
   list[[df_name]] <- uni_tested
   
-
-  # Multivariate
-  # multi_tested_string <- paste("tested ~", paste(covariates, collapse = " + "))
-  # 
-  # multi_tested <- glm(as.formula(multi_tested_string), 
-  #                   family = binomial (link = "logit"), 
-  #                   data = data)
-  # 
-  # df_name <- paste0("multi_tested", var)
-  # 
-  # list[[df_name]] <- multi_tested
-  # 
-  
-  
   
   # Probability of RR-TB ----------------------------------------------------
   
@@ -46,20 +32,6 @@ get_reg_output <- function(case_type, var, covariates, data){
   df_name <- paste0("uni_result", var)
   
   list[[df_name]] <- uni_result
-  
-  
-  # Multivariate
-  # multi_result_string <- paste("result ~", paste(covariates, collapse = " + "))
-  # 
-  # multi_result <- glm(as.formula(multi_result_string), 
-  #                   family = binomial (link = "logit"), 
-  #                   data = mdf_new_ind %>% filter(tested == "Tested"))
-  # 
-  # df_name <- paste0("multi_result", var)
-  # 
-  # list[[df_name]] <- multi_result
-  
-
   
   return(list(uni_tested,uni_result))
 
@@ -128,6 +100,7 @@ new_model_list[["multi_result"]] <-  glm(result ~ sex + hiv_status + age_cat + h
 
 
 prev_model_list <- unlist(prev_output, recursive = FALSE)
+
 prev_model_list[["multi_tested"]] <-  glm(tested ~ sex + tratamento + hiv_status + age_cat + health_unit, 
                                          family = binomial (link = "logit"), 
                                          data = mdf_prev_ind)
@@ -135,3 +108,14 @@ prev_model_list[["multi_tested"]] <-  glm(tested ~ sex + tratamento + hiv_status
 prev_model_list[["multi_result"]] <-  glm(result ~ sex + tratamento + hiv_status + age_cat + health_unit, 
                                          family = binomial (link = "logit"), 
                                          data = mdf_prev_ind %>% filter(tested == "tested"))
+
+
+
+## Other
+# new_model_list[["multi_tested_prison"]] <-  glm(tested ~ sex + hiv_status + age_cat + health_unit + pop_liber + state,
+#                                                 family = binomial (link = "logit"),
+#                                                 data = mdf_new_ind)
+# 
+# new_model_list[["multi_result_prison"]] <-  glm(result ~ sex + hiv_status + age_cat + health_unit + pop_liber + state,
+#                                                 family = binomial (link = "logit"),
+#                                                 data = mdf_new_ind %>% filter(tested == "tested"))
