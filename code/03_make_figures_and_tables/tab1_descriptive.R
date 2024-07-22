@@ -1,5 +1,5 @@
 # Select covariates to include
-covs <- c("result", "tested", "age_idade", "sex", "hiv_status", "tratamento",
+covs <- c("result", "tested", "age", "sex", "hiv_status", "tratamento",
           "pop_rua", "pop_liber", "agravtabac", "agravalcoo", "agravdroga",
           "agravdiabe", "cs_escol_n", "pop_imig", "health_unit", "race")
 
@@ -16,8 +16,8 @@ dat_type <- dat %>%
   summarize(n = n(), 
             result = round(mean(result == "positive"), 2),
             male_mean = round(mean(sex == "male"), 2), 
-            age_mean = round(mean(age_idade, na.rm = TRUE), 2), 
-            age_sd = round(sd(age_idade, na.rm = TRUE), 2),
+            age_mean = round(mean(age, na.rm = TRUE), 2), 
+            age_sd = round(sd(age, na.rm = TRUE), 2),
             hiv_mean = round(mean(hiv_status == "positive"), 2),
             # hiv_miss_mean = round(mean(hiv_status == "missing"), 2),
             hu_low = round(mean(health_unit == "low complexity"), 2),
@@ -66,8 +66,8 @@ dat_overall <- dat %>%
             n = n(), 
             result = round(mean(result == "positive"), 2),
             male_mean = round(mean(sex == "male"), 2), 
-            age_mean = round(mean(age_idade, na.rm = TRUE), 2), 
-            age_sd = round(sd(age_idade, na.rm = TRUE), 2),
+            age_mean = round(mean(age, na.rm = TRUE), 2), 
+            age_sd = round(sd(age, na.rm = TRUE), 2),
             hiv_mean = round(mean(hiv_status == "positive"), 2),
             # hiv_miss_mean = round(mean(hiv_status == "missing"), 2),
             hu_low = round(mean(health_unit == "low complexity"), 2),
@@ -180,6 +180,3 @@ order <- c("Variable (N = n)" , "Conclusive Xpert resistance result", "Rifampici
                              "Immigrant", "Homeless", "Incarcerated", "Uses tobacco", "Uses alcohol", "Uses illicit drugs")
 
 dat_reordered <- dat_reordered[match(order, dat_reordered$rowname), ]
-
-# Output table ------------------------------------------------------------
-write_xlsx(dat_reordered, paste0("output/figures_and_tables/tab_", file_version_save, "_descriptive.xlsx"))
