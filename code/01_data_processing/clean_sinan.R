@@ -247,35 +247,37 @@ sinan_tmp$health_unit <- factor(sinan_tmp$health_unit_not, levels = c("low compl
                                     )
   
   
-  # Create flag for age: 
-  # Identifies discrepancies in nu_idade_n (i.e. adults coded as children)
+  # Create flag for age that identifies discrepancies in nu_idade_n:
   # Create preliminary age flag for children 
   sinan_tmp <- sinan_tmp %>% mutate(age_flag = 
-                            # If there are children in prison, with education, etc., double check age nasc --> Missing age (Most cases are missing DOB anyway so can't compare)
-                            if_else(age_idade >= 1 & age_idade <= 4 & (pop_liber == "yes" | agravdroga == "yes" | agravalcoo == "yes" | agravtabac == "yes" | cs_escol_n %in% !c(0,1,2,3,9,10,NA)), "0-4 flag", 
-                                    # --> Missing age
-                                    if_else(age_idade >= 5 & age_idade <= 14 & pop_liber == "yes", "5-14 flag",  
-                                            # Identify full matches --> idade 
-                                            if_else(abs(age_idade - age_nasc) <= 5, "Match - Use age_idade", 
-                                                    # Other NA --> idade
-                                                    NA))))
-# Update age flag
-sinan_tmp <- sinan_tmp %>% 
-  # If last two digits of age_idade match dt-nasc -> age nasc
-  mutate(age_flag = if_else(age_nasc > 15 & age_nasc == nu_idade_n %% 100, "Match - Use age_nasc", age_flag), 
-         # Make sure all 0-4 YOs are correct 
-         age_flag = if_else(age_flag == "0-4 flag" & cs_escol_n %in% c(0,1,2,3,9,10,NA) & pop_liber != "yes" & agravdroga != "yes" & agravalcoo != "yes" & agravtabac != "yes", "Match - Use age_idade", age_flag), 
-         # If DOB isn't missing, use DOB
-         age_flag = if_else(age_flag == "0-4 flag" & (age_nasc > 4 & !is.na(dt_nasc)), "Match - Use age_nasc", age_flag), 
-         # If DOB is missing and not in either flags, use age_idade
-         age_flag = if_else(is.na(age_flag) & (is.na(dt_nasc) | age_idade > 4), "Match - Use age_idade", age_flag))
+                                      # 0-4 Flag - in prison, with education, etc. (Most cases are missing DOB anyway so can't compare)
+                                      if_else(age_idade >= 1 & age_idade <= 4 & (pop_liber == "yes" | agravdroga == "yes" | agravalcoo == "yes" | agravtabac == "yes" | cs_escol_n %in% !c(0,1,2,3,9,10,NA)), "0-4 flag", 
+                                              # 5-14 Flag
+                                              if_else(age_idade >= 5 & age_idade <= 14 & pop_liber == "yes", "5-14 flag", NA))) 
+  
+  # Update age flag
+  sinan_tmp <- sinan_tmp %>% 
+    
+    mutate(
+      # Identify full matches (within 10 years)
+      age_flag = if_else(is.na(age_flag) & abs(age_idade - age_nasc) <= 10, "Full Match - Use age_idade", age_flag),
+      # If last two digits of age_idade match age_nasc for adults --> age nasc
+      age_flag = if_else(age_idade > 15 & (age_nasc == nu_idade_n %% 100 | age_nasc + 1 == nu_idade_n %% 100 | age_nasc - 1 == nu_idade_n %% 100), "Two digits match - Use age_nasc", age_flag), 
+      # Make sure all 0-4 YOs are correct 
+      age_flag = if_else(age_flag == "0-4 flag" & cs_escol_n %in% c(0,1,2,3,9,10,NA) & pop_liber != "yes" & agravdroga != "yes" & agravalcoo != "yes" & agravtabac != "yes", "0-4 match - Use age_idade", age_flag), 
+      # If DOB isn't missing for children, use DOB
+      age_flag = if_else(age_flag == "0-4 flag" & (age_nasc > 4 & !is.na(dt_nasc)), "0-4 check DOB - Use age_nasc", age_flag), 
+      # If DOB is missing and not in either flags, use age_idade
+      age_flag = if_else(is.na(age_flag) & is.na(dt_nasc) & age_idade > 4, "Missing DOB - Use age_idade", age_flag),
+      # If DOB is missing and not in either flags, use age_idade
+      age_flag = if_else((!is.na(dt_diag) & !is.na(dt_nasc) & dt_diag == dt_nasc & !is.na(nu_idade_n) & age_idade >=5), "diag = DOB - Use age_idade", age_flag))
 
 
 
   # Create age variable based on age flag 
   sinan_tmp <- sinan_tmp %>% mutate(age = if_else(age_flag %in% c("0-4 flag", "5-14 flag"), NA, 
-                                                  if_else(age_flag == "Match - Use age_nasc", age_nasc, 
-                                                          if_else(age_flag == "Match - Use age_idade", age_idade, NA))))
+                                                  if_else(age_flag %in% c("Two digits match - Use age_nasc", "0-4 check DOB - Use age_nasc") , age_nasc, 
+                                                          if_else(age_flag %in% c("0-4 match - Use age_idade", "Full Match - Use age_idade", "Missing DOB - Use age_idade", "diag = DOB - Use age_idade"), age_idade, NA))))
   
   # Finalize age categories
   sinan_tmp$age_cat <- case_when(
@@ -291,34 +293,11 @@ sinan_tmp <- sinan_tmp %>%
   )
   
   # Compare age category based on other age variables
-  ## Create age category based on date of birth
-  # sinan_tmp$age_cat_nasc <- case_when(
-  #   sinan_tmp$age_nasc >= 0 & sinan_tmp$age_nasc < 5 ~ "0-4",
-  #   sinan_tmp$age_nasc >= 5 & sinan_tmp$age_nasc < 15 ~ "5-14",
-  #   sinan_tmp$age_nasc >= 15 & sinan_tmp$age_nasc < 25 ~ "15-24",
-  #   sinan_tmp$age_nasc >= 25 & sinan_tmp$age_nasc < 35 ~ "25-34",
-  #   sinan_tmp$age_nasc >= 35 & sinan_tmp$age_nasc < 45 ~ "35-44",
-  #   sinan_tmp$age_nasc >= 45 & sinan_tmp$age_nasc < 55 ~ "45-54",
-  #   sinan_tmp$age_nasc >= 55 & sinan_tmp$age_nasc < 65 ~ "55-64",
-  #   sinan_tmp$age_nasc >= 65 ~ "65+"
-  # )
-
-
-  ## Create age category based on observed age variable (What NTP says is more reliable)
-  # sinan_tmp$age_cat_idade <- case_when(
-  #   sinan_tmp$age_idade >= 0 & sinan_tmp$age_idade < 5 ~ "0-4",
-  #   sinan_tmp$age_idade >= 5 & sinan_tmp$age_idade < 15 ~ "5-14",
-  #   sinan_tmp$age_idade >= 15 & sinan_tmp$age_idade < 25 ~ "15-24",
-  #   sinan_tmp$age_idade >= 25 & sinan_tmp$age_idade < 35 ~ "25-34",
-  #   sinan_tmp$age_idade >= 35 & sinan_tmp$age_idade < 45 ~ "35-44",
-  #   sinan_tmp$age_idade >= 45 & sinan_tmp$age_idade < 55 ~ "45-54",
-  #   sinan_tmp$age_idade >= 55 & sinan_tmp$age_idade < 65 ~ "55-64",
-  #   sinan_tmp$age_idade >= 65 ~ "65+"
-  # )
-
-  # Compare age_cat to age_idade
-  # tabyl(sinan_tmp, age_cat, age_cat_idade)
-
+  tabyl(sinan_tmp, age, pop_liber)
+  tabyl(sinan_tmp, age, agravdroga)
+  tabyl(sinan_tmp, age, agravalcoo)
+  tabyl(sinan_tmp, age, agravtabac)
+  
   sinan_tmp$age_cat <- factor(sinan_tmp$age_cat, levels = c("0-4", "5-14", "15-24", "25-34", "35-44", "45-54", "55-64", "65+", "missing")) %>% relevel(ref = "25-34")
 
   
