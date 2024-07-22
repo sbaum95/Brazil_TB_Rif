@@ -6,27 +6,11 @@
 
 source("code/dependencies.R")
 
-# Set up paths to store output and load
-file_version_load <- "20240711"
-file_version_save <- "20240711"
-
-# Select analytic datasets to load
-load(paste0("data/mdf_new_ind_tmp_", file_version_load,".Rdata"))
-load(paste0("data/mdf_prev_ind_tmp_", file_version_load,".Rdata"))
 
 
 # 1. Run models --------------------------------------------------------------
 tictoc::tic()
 
-# Select models to run
-models_to_run <- c("sp_2017_new",  # Main: 2017-2023 new cases
-                   "sp_2017_prev", # Main: 2017-2023 previously treated cases
-                   "sp_2014_new",  # Sensitivity (Time period): 2014-2023 new cases
-                   "sp_2014_prev", # Sensitivity (Time period): 2014-2023 previously treated cases
-                   "sens_1_new",   # Sensitivity (Additional covariates): 2017-2023 new cases
-                   "sens_1_prev",  # Sensitivity (Additional covariates): 2017-2023 previously treated cases
-                   "sens_2_new",   # Sensitivity (Time varying selection): 2017-2023 new cases
-                   "sens_2_prev")  # Sensitivity (Time varying selection): 2017-2023 previously treated cases
 
 # Store fitted models
 fitted_models <- list() # To store model output (if not adding models to existing fitted values)
