@@ -2,10 +2,6 @@
 
 source("code/dependencies.R")
 
-# Create file output params
-file_version_load <- "20240711"
-file_version_save <- "20240711"
-
 # Load SINAN and model results  ------------------------------------------------
 load(paste0("output/compiled_results_", file_version_load, ".Rdata"))
 load(paste0("data/sinan_tmp_", file_version_load, ".Rdata"))
