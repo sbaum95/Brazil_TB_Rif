@@ -39,11 +39,11 @@ compiled_results[["nat_yr"]] %>%
 # Exclusion criteria
 sinan_tmp %>% 
   summarize(
-    new = sum(tratamento == 1),
-    previous = sum(tratamento %in% c("2", "3")),
-    relapse = sum(tratamento == "2"),
-    retreat = sum(tratamento == "3"),
-    unknown = sum(tratamento == "4"), 
+    new = sum(tratamento == 1 & situa_ence != "06", na.rm = TRUE),
+    previous = sum(tratamento %in% c("2", "3") & situa_ence != "06", na.rm = TRUE),
+    relapse = sum(tratamento == "2" & situa_ence != "06"),
+    retreat = sum(tratamento == "3" & situa_ence != "06"),
+    unknown = sum(tratamento == "4" & situa_ence != "06"), 
     unknown_pct = round((sum(tratamento == "4")/n())*100, 2),
     transfer = sum(tratamento == "5"), 
     transfer_pct = round((sum(tratamento == "5")/n())*100, 2),
@@ -97,13 +97,7 @@ sinan_tmp %>%
 # Results -----------------------------------------------------------------
 
 # Figure 1A ---------------------------------------------------------------
-options (digits = 2)
-
-# Share of xpert test results (share of patients)
-data.frame(conclusive = (tabyl(sinan_tmp %>% filter(tratamento %in% c("1", "2", "3") & situa_ence != "06"), test_molec)[[1, 3]] + tabyl(sinan_tmp %>% filter(tratamento %in% c("1", "2", "3")), test_molec)[[2, 3]])*100, 
-           not_detectable = tabyl(sinan_tmp %>% filter(tratamento %in% c("1", "2", "3") & situa_ence != "06"), test_molec)[[3, 3]]*100, 
-           inconclusive =  tabyl(sinan_tmp %>% filter(tratamento %in% c("1", "2", "3") & situa_ence != "06"), test_molec)[[4, 3]]*100, 
-           not_tested = (tabyl(sinan_tmp %>% filter(tratamento %in% c("1", "2", "3") & situa_ence != "06"), test_molec)[[5, 3]] + tabyl(sinan_tmp %>% filter(tratamento %in% c("1", "2", "3")), test_molec)[[6, 3]] + tabyl( sinan_tmp %>% filter(tratamento %in% c("1", "2", "3")), test_molec)[[7, 3]])*100)
+options (digits = 3)
 
 
 # Test coverage of all cases in 2014
@@ -118,13 +112,20 @@ round(((subset(compiled_results[["nat_yr"]], model == "sp_2014" & case_type == "
          (subset(compiled_results[["nat_yr"]], model == "sp_2014" & case_type == "new" & year == "2023")[["total_TB_cases"]] +
             subset(compiled_results[["nat_yr"]], model == "sp_2014" & case_type == "prev" & year == "2023")[["total_TB_cases"]]))*100, 2)
 
+# Share of xpert test results (share of patients)
+data.frame(conclusive = (tabyl(sinan_tmp %>% filter(tratamento %in% c("1", "2", "3") & situa_ence != "06"), test_molec)[[1, 3]] + tabyl(sinan_tmp %>% filter(tratamento %in% c("1", "2", "3")), test_molec)[[2, 3]])*100, 
+           not_detectable = tabyl(sinan_tmp %>% filter(tratamento %in% c("1", "2", "3") & situa_ence != "06"), test_molec)[[3, 3]]*100, 
+           inconclusive =  tabyl(sinan_tmp %>% filter(tratamento %in% c("1", "2", "3") & situa_ence != "06"), test_molec)[[4, 3]]*100, 
+           not_tested = (tabyl(sinan_tmp %>% filter(tratamento %in% c("1", "2", "3") & situa_ence != "06"), test_molec)[[5, 3]] + tabyl(sinan_tmp %>% filter(tratamento %in% c("1", "2", "3")), test_molec)[[6, 3]] + tabyl( sinan_tmp %>% filter(tratamento %in% c("1", "2", "3")), test_molec)[[7, 3]])*100)
+
+
 # Average difference in coverage between new and prev
-compiled_results[["nat_yr"]] %>% 
-  filter(model == "sp_2014") %>% 
-  group_by(case_type, year) %>% 
-  mutate(cov = obs_num_tested/total_TB_cases) %>% 
-  group_by(year) %>% 
-  summarize(cov_diff = cov[case_type == "prev"] - cov[case_type == "new"])
+# compiled_results[["nat_yr"]] %>% 
+#   filter(model == "sp_2014") %>% 
+#   group_by(case_type, year) %>% 
+#   mutate(cov = obs_num_tested/total_TB_cases) %>% 
+#   group_by(year) %>% 
+#   summarize(cov_diff = cov[case_type == "prev"] - cov[case_type == "new"])
 
 
 # # Test coverage of NEW cases at end of 2014
@@ -153,12 +154,12 @@ compiled_results[["nat_yr"]] %>%
 # Figure 2 ----------------------------------------------------------------
 
 ## Calculate average bias between 2017-2023 for new cases
-compiled_results[["nat_yr"]] %>% 
-  filter(model == "sp_2017") %>% 
-  group_by(case_type, year) %>% 
-  summarize(bias = mean(fitted_RR/obs_RR), 
-            fitted = mean(fitted_RR), 
-            obs = mean(obs_RR))
+# compiled_results[["nat_yr"]] %>% 
+#   filter(model == "sp_2017") %>% 
+#   group_by(case_type, year) %>% 
+#   summarize(bias = mean(fitted_RR/obs_RR), 
+#             fitted = mean(fitted_RR), 
+#             obs = mean(obs_RR))
 
 compiled_results[["nat_qrt"]] %>% 
   filter(model == "sp_2017") %>% 
@@ -230,34 +231,6 @@ round(((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2023"
 round(((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2023" & case_type == "prev")[["fitted_RR"]] - subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2017" & case_type == "prev")[["fitted_RR"]])/(subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2017" & case_type == "prev")[["fitted_RR"]]))*100, 2)
 
 
-# WHO estimates
-source("code/03_make_figures_and_tables/fig_total_inc_WHO.R")
-
-# Note: WHO and CDR data only go through 2022 (Figure applies 2022 to 2023)
-# WHO positivity among new cases in 2022
-who_data_new$e_rr_pct[who_data_new$year == 2022]
-who_data_new$pct_lo[who_data_new$year == 2022]
-who_data_new$pct_hi[who_data_new$year == 2022]
-
-# WHO positivity among prev cases in 2022
-who_data_prev$e_rr_pct[who_data_prev$year == 2022]
-who_data_prev$pct_lo[who_data_prev$year == 2022]
-who_data_prev$pct_hi[who_data_prev$year == 2022]
-
-# Positivity among new cases in 2022 (Point estimate and UI)
-round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["fitted_RR"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["total_TB_cases"]])*100, 2)
-round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["proj_lci"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["total_TB_cases"]])*100, 2)
-round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["proj_hci"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["total_TB_cases"]])*100, 2)
-
-
-# Positivity among prev cases in 2022 (Point estimate and UI)
-round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["fitted_RR"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["total_TB_cases"]])*100, 2)
-round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["proj_lci"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["total_TB_cases"]])*100, 2)
-round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["proj_hci"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["total_TB_cases"]])*100, 2)
-
-
-
-
 # Figure 4 ----------------------------------------------------------------
 options(digits = 1)
 
@@ -269,6 +242,37 @@ compiled_results[["state_yr"]] %>%
             lci_pct = round((proj_lci/total_TB_cases)*100, 2),
             hci_pct = round((proj_hci/total_TB_cases)*100, 2)) %>% 
   filter(pct == max(pct) | pct == min(pct))
+
+
+
+
+# Figure 3C ---------------------------------------------------------------
+options(digits = 3)
+
+# WHO estimates
+source("code/03_make_figures_and_tables/fig_total_inc_WHO.R")
+
+# Note: WHO and CDR data only go through 2022 (Figure applies 2022 to 2023)
+# WHO positivity among new cases in 2022
+who_data_new$e_rr_pct[who_data_new$year == 2022]
+who_data_new$pct_lo[who_data_new$year == 2022]
+who_data_new$pct_hi[who_data_new$year == 2022]
+
+# Modeled positivity among new cases in 2022 (Point estimate and UI)
+round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["fitted_RR"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["total_TB_cases"]])*100, 2)
+round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["proj_lci"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["total_TB_cases"]])*100, 2)
+round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["proj_hci"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "new")[["total_TB_cases"]])*100, 2)
+
+# WHO positivity among prev cases in 2022
+who_data_prev$e_rr_pct[who_data_prev$year == 2022]
+who_data_prev$pct_lo[who_data_prev$year == 2022]
+who_data_prev$pct_hi[who_data_prev$year == 2022]
+
+# Modeled positivity among prev cases in 2022 (Point estimate and UI)
+round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["fitted_RR"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["total_TB_cases"]])*100, 2)
+round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["proj_lci"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["total_TB_cases"]])*100, 2)
+round((subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["proj_hci"]]/subset(compiled_results[["nat_yr"]], model == "sp_2017" & year == "2022" & case_type == "prev")[["total_TB_cases"]])*100, 2)
+
 
 
 
@@ -301,9 +305,12 @@ test <- compiled_results[["nat_yr"]] %>%
 
 # Percentage point difference 
 options(digits = 3)
+
+## Sens 1
 mean(test$diff_sens_1[test$case_type == "new"])
 mean(test$diff_sens_1[test$case_type == "prev"])
 
+## Sens 2
 mean(test$diff_sens_2[test$case_type == "new"])
 mean(test$diff_sens_2[test$case_type == "prev"])
 
