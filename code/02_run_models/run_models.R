@@ -1,5 +1,6 @@
 
 # Create model functions ---------------------------------------------------
+ctrl <- gam.control(trace = TRUE)
 
 # Main model 
 run_sp_model <- function(name, data, filter_expr, outcome, covariates, latitude, longitude, k_t, k_sp) {
@@ -33,7 +34,8 @@ run_sp_model <- function(name, data, filter_expr, outcome, covariates, latitude,
   model_object <- bam(formula = as.formula(formula_string),
                       data = model_df,
                       family = binomial(link = "logit"),
-                      method = "REML"
+                      method = "fREML", 
+                      control = ctrl
                       )
 
   return(list(
@@ -85,7 +87,8 @@ run_sel_model <- function(name, data, filter_expr, outcome, covariates, latitude
   model_object <- bam(as.formula(formula_string),
                       data = model_df,
                       family = binomial(link = "logit"),
-                      method = "REML"
+                      method = "fREML", 
+                      control = ctrl
                       )
 
   return(list(
