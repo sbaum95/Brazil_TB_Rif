@@ -6,7 +6,7 @@ This repository contains code necessary to produce findings associated with the 
 This project uses routine Xpert MTB/RIF data to estimate levels and trends in Rifampin-resistant Tuberculosis (RR-TB) using a hierarchical generalized additive model in R. We apply this model to Brazil, using patient-level TB data from their National Disease Notification Registry (SINAN). 
 
 ## Table of Contents: 
-*master_run_all.R* will run all sub-directories to prepare analytic datasets, run models, and produce figures and tables.
+*master_run_all.R* will run all sub-directories to prepare analytic datasets, run models, and produce figures and tables. Each sub-directory contains a *01_run_all.R* that will run components of that directory. Note that if running within sub-directory, you will need to manually set the version for the files to load and save (e.g. file_version_load, file_version_save). Otherwise, these can be set in *master_run_all.R*. 
 
 - **01_data_processing** - *01_run_all.R* cleans SINAN data and prepares analytics datasets for model, by sourcing relevant scripts in folder. 
 
