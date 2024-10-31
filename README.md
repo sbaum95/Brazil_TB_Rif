@@ -1,6 +1,6 @@
 # Estimating RR-TB burden using routine Xpert MTB/RIF data: An application to Brazil
 
-This repository contains code necessary to produce findings associated with the manuscript "". 
+This repository contains code necessary to produce findings associated with the manuscript "Surveillance for TB drug resistance using routine rapid diagnostic testing data: Methodological development and application in Brazil".  A pre-print version of this manuscript can be found on medrxiv: https://www.medrxiv.org/content/10.1101/2024.07.22.24310845v1 
 
 ## Description: 
 This project uses routine Xpert MTB/RIF data to estimate levels and trends in Rifampin-resistant Tuberculosis (RR-TB) using a hierarchical generalized additive model in R. We apply this model to Brazil, using patient-level TB data from their National Disease Notification Registry (SINAN). 
