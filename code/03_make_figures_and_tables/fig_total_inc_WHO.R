@@ -1,5 +1,6 @@
 
-# Load WHO data -----------------------------------------------------------
+# Load data -----------------------------------------------------------
+## Load WHO data 
 who_mdr <- read_csv("data/MDR_RR_TB_burden_estimates_2024-04-03.csv") %>%
   filter(country == "Brazil") %>%
   filter(year >= 2017 & year <= 2023) %>%
@@ -165,15 +166,21 @@ data_total <- data.frame(
       test_sensi = as.factor(test_sensi),
       case_type = if_else(tratamento == "1", "new", "prev")
     ) %>%
+    filter(!(test_sensi %in% c("2", "3") & test_molec == "1")) %>% 
     group_by(diag_qrt) %>%
     summarize(tested = sum(test_sensi %in% c("1", "2", "3", "4", "5")), 
-              cases = sum(test_sensi %in% c("2", "3"))  # At least RR+  
+              cases = sum(test_sensi %in% c("2", "3")),  # At least RR+  
+              pct = cases/tested, 
+              naive = (sum(cases)/sum(tested)) * n()
     ),
-  observed = compiled_results[["nat_qrt"]] %>%
+  xpert = compiled_results[["nat_qrt"]] %>%
     filter(model == "sp_2017") %>%
     ungroup() %>%
     group_by(diag_qrt) %>%
-    summarize(cases = sum(obs_RR)
+    summarize(cases = sum(obs_RR), 
+              tested = sum(obs_num_tested), 
+              pct = cases/tested,
+              naive = (sum(obs_RR)/sum(obs_num_tested)) * sum(total_TB_cases)
     ),
   projected = compiled_results[["nat_qrt"]] %>%
     filter(model == "sp_2017") %>%
@@ -205,12 +212,12 @@ data_total <- data.frame(
 ) %>%
   rename(diag_qrt = projected.diag_qrt) %>%
   group_by(diag_qrt) %>%
-  mutate(total.observed = sum(observed.cases + dst.cases)) %>%
-  select(diag_qrt, total.observed, observed.cases, projected.cases, projected.lci, projected.hci, cdr.cases, tb.cases, pop_2010) %>%
+  mutate(observed.total = ((xpert.cases + dst.cases)/(dst.tested + xpert.tested)) * tb.cases) %>%
+  select(diag_qrt, observed.total, xpert.naive, projected.cases, projected.lci, projected.hci, cdr.cases, tb.cases, pop_2010) %>%
   group_by(diag_qrt) %>% 
   # Get person-years from person-quarters
-  summarize(observed_xpert_inc = (observed.cases/pop_2010)*(4) * 100000, 
-            observed_total_inc = (total.observed/pop_2010)*(4) * 100000, 
+  summarize(observed_xpert_inc = (xpert.naive/pop_2010)*(4) * 100000, 
+            observed_total_inc = (observed.total/pop_2010)*(4) * 100000, 
             projected_inc = (projected.cases/pop_2010)*(4) * 100000, 
             projected_inc_lci = (projected.lci/pop_2010)*(4) * 100000, 
             projected_inc_hci = (projected.hci/pop_2010)*(4) * 100000,
